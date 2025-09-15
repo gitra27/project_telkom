@@ -1,0 +1,151 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+/* Logo */
+.img-fluid {
+  max-width: 120px;
+  height: auto;
+  margin-bottom: 1rem;
+}
+
+/* Background & Text */
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background-color: rgb(249, 250, 251);
+  color: #000000;
+  height: 100dvh;
+}
+
+/* Header styling */
+.card-header h2 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.card-header h4 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 400;
+  color: #6b7280;
+  font-size: 1rem;
+}
+.btn.btn-primary {
+  background-color: rgb(228, 35, 19) !important;
+  color: rgb(255, 255, 255) !important;
+  border-radius: 1rem !important;
+  padding-right: 20px;
+  padding-left: 20px;
+  height: 44px;
+}
+
+.btn.btn-primary:hover {
+  background-color: rgb(200, 30, 15) !important;
+}
+
+/* Button lainnya dengan warna yang sama */
+.btn-success {
+  background-color: rgb(228, 35, 19) !important;
+  color: rgb(255, 255, 255) !important;
+  border: none !important;
+}
+.btn-success:hover {
+  background-color: rgb(200, 30, 15) !important;
+}
+
+.btn-danger {
+  background-color: rgb(228, 35, 19) !important;
+  color: rgb(255, 255, 255) !important;
+  border: none !important;
+}
+.btn-danger:hover {
+  background-color: rgb(200, 30, 15) !important;
+}
+
+.btn-secondary {
+  background-color: rgb(228, 35, 19) !important;
+  color: rgb(255, 255, 255) !important;
+  border: none !important;
+}
+.btn-secondary:hover {
+  background-color: rgb(200, 30, 15) !important;
+}
+/* Card */
+.card {
+  background-color: rgb(249, 250, 251);
+  border-radius: 15px;
+  border: 1px solid #e5e7eb;
+}
+.card-body h5 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  color: #1f2937 !important;
+  margin-bottom: 0.5rem;
+}
+
+.card-body p {
+  font-family: 'Poppins', sans-serif;
+  color: #6b7280 !important;
+  margin-bottom: 1rem;
+}
+
+.card-footer {
+  background-color: transparent !important;
+  border-top: none !important;
+}
+
+/* Alert styling */
+.alert-info {
+  background-color: #dbeafe !important;
+  border-color: #93c5fd !important;
+  color: #1e40af !important;
+}
+
+.alert-warning {
+  background-color: #fef3c7 !important;
+  border-color: #f59e0b !important;
+  color: #92400e !important;
+}
+
+.alert-danger {
+  background-color: #fee2e2 !important;
+  border-color: #f87171 !important;
+  color: #dc2626 !important;
+}
+
+/* Login page specific styling */
+.text-white {
+  color: #1f2937 !important;
+}
+
+.form-label {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  color: #374151 !important;
+  margin-bottom: 0.5rem;
+}
+
+/* Input */
+.form-control {
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  color: #1f2937;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+}
+.form-control:focus {
+  background-color: #ffffff;
+  border-color: rgb(228, 35, 19);
+  color: #1f2937;
+  box-shadow: 0 0 0 0.25rem rgba(228, 35, 19, 0.25);
+}
+
+/* Button styling sudah didefinisikan di atas */
+
+/* Animasi fade-in */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade {
+  animation: fadeIn 0.8s ease-in-out;
+}
