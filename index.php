@@ -2,11 +2,11 @@
 include 'config.php';
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
-    exit;23
+    exit;
 }
 
 $user_id = $_SESSION['user_id'];
-$nama    = $_SESSION['nama'];saw
+$nama    = $_SESSION['nama']; 
 
 // Cek absensi hari ini
 $tanggal = date("Y-m-d");
