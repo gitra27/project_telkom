@@ -6,7 +6,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
-$nama    = $_SESSION['nama'];
+$nama    = $_SESSION['nama'];saw
 
 // Cek absensi hari ini
 $tanggal = date("Y-m-d");
