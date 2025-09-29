@@ -50,7 +50,7 @@ $absen = $res->fetch_assoc();
             </form>
           <?php else: ?>
             <div class="alert alert-info d-flex justify-content-between align-items-center mt-3" role="alert">
-              Hari ini absen sudah selesai.
+              Hari ini absen sudah selesai. meuheueuhehue 
               <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
           <?php endif; ?>
