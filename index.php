@@ -2,7 +2,11 @@
 include 'config.php';
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
+<<<<<<< HEAD
     exit;
+=======
+    exit; 123
+>>>>>>> 9af60685e15da153edce8c8ae3426ef4205d070f
 }
 
 $user_id = $_SESSION['user_id'];
