@@ -44,30 +44,30 @@ body {
 
 /* Button lainnya dengan warna yang sama */
 .btn-success {
-  background-color: rgb(228, 35, 19) !important;
+  background-color: #6b7280 !important;
   color: rgb(255, 255, 255) !important;
   border: none !important;
 }
 .btn-success:hover {
-  background-color: rgb(200, 30, 15) !important;
+  background-color: #4b5563 !important;
 }
 
 .btn-danger {
-  background-color: rgb(228, 35, 19) !important;
+  background-color: #6b7280 !important;
   color: rgb(255, 255, 255) !important;
   border: none !important;
 }
 .btn-danger:hover {
-  background-color: rgb(200, 30, 15) !important;
+  background-color: #4b5563 !important;
 }
 
 .btn-secondary {
-  background-color: rgb(228, 35, 19) !important;
+  background-color: #6b7280 !important;
   color: rgb(255, 255, 255) !important;
   border: none !important;
 }
 .btn-secondary:hover {
-  background-color: rgb(200, 30, 15) !important;
+  background-color: #4b5563 !important;
 }
 /* Card */
 .card {
@@ -134,33 +134,22 @@ body {
 }
 .form-control:focus {
   background-color: #ffffff;
-  border-color: rgb(228, 35, 19);
+  border-color: #9ca3af;
   color: #1f2937;
-  box-shadow: 0 0 0 0.25rem rgba(228, 35, 19, 0.25);
+  box-shadow: 0 0 0 0.25rem rgba(107, 114, 128, 0.25);
 }
 
 /* Button styling sudah didefinisikan di atas */
 
 /* Login Page Styling */
 .login-body {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #ffffff;
   min-height: 100vh;
 }
 
 .login-left {
-  background: linear-gradient(135deg, rgb(228, 35, 19) 0%, rgb(200, 30, 15) 100%);
+  background: #ffffff;
   position: relative;
-}
-
-.login-left::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-  opacity: 0.3;
 }
 
 .login-form-container {
@@ -178,8 +167,8 @@ body {
 }
 
 .login-form .form-control:focus {
-  border-color: rgb(228, 35, 19);
-  box-shadow: 0 0 0 0.2rem rgba(228, 35, 19, 0.25);
+  border-color: #9ca3af;
+  box-shadow: 0 0 0 0.2rem rgba(107, 114, 128, 0.25);
 }
 
 /* Dashboard Styling */
@@ -192,6 +181,14 @@ body {
   filter: brightness(0) invert(1);
 }
 
+.navbar.bg-primary {
+  background-color: #6b7280 !important;
+}
+
+.badge.bg-primary {
+  background-color: #6b7280 !important;
+}
+
 .avatar-circle {
   width: 80px;
   height: 80px;
@@ -199,7 +196,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgb(228, 35, 19), rgb(200, 30, 15));
+  background: #6b7280;
 }
 
 .info-item {
@@ -210,7 +207,7 @@ body {
 }
 
 .clock-display {
-  background: linear-gradient(135deg, rgb(228, 35, 19), rgb(200, 30, 15));
+  background: #6b7280;
   color: white;
   padding: 1rem 1.5rem;
   border-radius: 10px;
@@ -230,7 +227,7 @@ body {
 .card-header {
   border-bottom: 1px solid #e9ecef;
   border-radius: 15px 15px 0 0 !important;
-  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  background: #f8f9fa;
 }
 
 /* Button Enhancements */
@@ -258,22 +255,22 @@ body {
 }
 
 .alert-success {
-  background: linear-gradient(135deg, #d4edda, #c3e6cb);
+  background: #d4edda;
   color: #155724;
 }
 
 .alert-info {
-  background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+  background: #d1ecf1;
   color: #0c5460;
 }
 
 .alert-warning {
-  background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+  background: #fff3cd;
   color: #856404;
 }
 
 .alert-danger {
-  background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+  background: #f8d7da;
   color: #721c24;
 }
 
@@ -284,7 +281,7 @@ body {
 }
 
 .table thead th {
-  background: linear-gradient(135deg, rgb(228, 35, 19), rgb(200, 30, 15));
+  background: #6b7280;
   color: white;
   border: none;
   font-weight: 600;
@@ -309,15 +306,15 @@ body {
 }
 
 .bg-success {
-  background: linear-gradient(135deg, #28a745, #20c997) !important;
+  background: #28a745 !important;
 }
 
 .bg-warning {
-  background: linear-gradient(135deg, #ffc107, #fd7e14) !important;
+  background: #ffc107 !important;
 }
 
 .bg-danger {
-  background: linear-gradient(135deg, #dc3545, #e83e8c) !important;
+  background: #dc3545 !important;
 }
 
 /* Responsive Design */
@@ -357,4 +354,257 @@ body {
 
 .btn:active {
   animation: pulse 0.2s ease-in-out;
+}
+
+/* Statistik Cards */
+.bg-gradient-primary {
+  background: #6b7280 !important;
+}
+
+.bg-gradient-success {
+  background: #28a745 !important;
+}
+
+.bg-gradient-warning {
+  background: #ffc107 !important;
+}
+
+.bg-gradient-info {
+  background: #17a2b8 !important;
+}
+
+.stat-icon {
+  opacity: 0.3;
+}
+
+/* Calendar Styling */
+.calendar-container {
+  padding: 1rem;
+}
+
+.calendar-grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.calendar-day-header {
+  text-align: center;
+  font-weight: 600;
+  color: #6b7280;
+  padding: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.calendar-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.calendar-day:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.calendar-day.empty {
+  border: none;
+  background: transparent;
+}
+
+.calendar-day.today {
+  border-color: #6b7280;
+  background: rgba(107, 114, 128, 0.1);
+  font-weight: bold;
+}
+
+.calendar-day.complete {
+  border-color: #28a745;
+  background: rgba(40, 167, 69, 0.1);
+}
+
+.calendar-day.partial {
+  border-color: #ffc107;
+  background: rgba(255, 193, 7, 0.1);
+}
+
+.calendar-day.absent {
+  border-color: #dc3545;
+  background: rgba(220, 53, 69, 0.1);
+}
+
+.calendar-day-number {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.calendar-status {
+  font-size: 0.7rem;
+}
+
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.legend-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 2px solid;
+}
+
+.legend-color.today {
+  background: rgba(107, 114, 128, 0.1);
+  border-color: #6b7280;
+}
+
+.legend-color.complete {
+  background: rgba(40, 167, 69, 0.1);
+  border-color: #28a745;
+}
+
+.legend-color.partial {
+  background: rgba(255, 193, 7, 0.1);
+  border-color: #ffc107;
+}
+
+.legend-color.absent {
+  background: rgba(220, 53, 69, 0.1);
+  border-color: #dc3545;
+}
+
+/* Absen Icon */
+.absen-icon {
+  animation: pulse 2s infinite;
+}
+
+.absen-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.absen-info-box {
+  background: #f8f9fa;
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+}
+
+.info-item-box {
+  padding: 1rem;
+  background: white;
+  border-radius: 10px;
+  border: 2px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.info-item-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.info-item-box.border-success {
+  border-color: #28a745;
+}
+
+.info-item-box.border-danger {
+  border-color: #dc3545;
+}
+
+.info-item-box i {
+  font-size: 1.5rem;
+}
+
+.absen-btn {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
+
+.absen-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
+/* Info Row */
+.info-row {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.bg-gradient-secondary {
+  background: #9ca3af !important;
+}
+
+/* Outline buttons */
+.btn-outline-primary {
+  border-color: #6b7280 !important;
+  color: #6b7280 !important;
+}
+
+.btn-outline-primary:hover {
+  background-color: #6b7280 !important;
+  border-color: #6b7280 !important;
+  color: white !important;
+}
+
+/* Responsive Calendar */
+@media (max-width: 768px) {
+  .calendar-day {
+    padding: 0.25rem;
+    font-size: 0.75rem;
+  }
+  
+  .calendar-day-number {
+    font-size: 0.75rem;
+  }
+  
+  .calendar-legend {
+    font-size: 0.75rem;
+  }
 }

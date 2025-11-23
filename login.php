@@ -13,21 +13,19 @@ include 'config.php';
 <body class="login-body">
 <div class="container-fluid">
   <div class="row min-vh-100">
-    <!-- Left Side - Branding -->
+
     <div class="col-lg-6 d-none d-lg-flex align-items-center justify-content-center login-left">
-      <div class="text-center text-white">
-        <img src="telkom.png" class="img-fluid mb-4" style="max-height: 200px;" alt="Logo Telkom">
-        <h2 class="fw-bold mb-3">Sistem Absensi Karyawan</h2>
-        <h4 class="fw-light">TelkomAkses</h4>
-        <p class="mt-4 fs-5">Kelola kehadiran karyawan dengan mudah dan efisien</p>
+      <div class="text-center">
+        <img src="telkom.png" class="img-fluid mb-4" style="height: 100px; width: 250px;" alt="Logo Telkom">
+        <h2 class="fw-bold mb-3 text-dark">Sistem Absensi Karyawan</h2>
+        <h4 class="fw-light text-muted">TelkomAkses</h4>
+        <p class="mt-4 fs-5 text-muted">Kelola kehadiran karyawan dengan mudah dan efisien</p>
       </div>
     </div>
     
-    <!-- Right Side - Login Form -->
     <div class="col-lg-6 d-flex align-items-center justify-content-center">
       <div class="login-form-container">
         <div class="text-center mb-4">
-          <img src="telkom.png" class="img-fluid d-lg-none mb-3" style="max-height: 80px;" alt="Logo Telkom">
           <h3 class="fw-bold text-dark">Selamat Datang</h3>
           <p class="text-muted">Silakan login untuk mengakses sistem absensi</p>
         </div>
@@ -82,9 +80,10 @@ include 'config.php';
               <input type="password" name="password" class="form-control border-start-0" placeholder="Masukkan password Anda" required>
             </div>
           </div>
-          <button class="btn btn-primary w-100 py-3 fw-semibold fs-5">
-            <i class="fas fa-sign-in-alt me-2"></i>Masuk ke Sistem
-          </button>
+          <button class="btn btn-primary w-100 py-3 fw-semibold fs-5 d-flex justify-content-center align-items-center">
+    <i class="fas fa-sign-in-alt me-2"></i>
+    Masuk ke Sistem
+</button>
         </form>
         
         <div class="text-center mt-4">
