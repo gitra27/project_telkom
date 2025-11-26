@@ -182,7 +182,7 @@ body {
 }
 
 .navbar.bg-primary {
-  background-color: #6b7280 !important;
+  background-color: rgb(228, 35, 19) !important;
 }
 
 .badge.bg-primary {
@@ -207,8 +207,7 @@ body {
 }
 
 .clock-display {
-  background: #6b7280;
-  color: white;
+  background: #e60000;
   padding: 1rem 1.5rem;
   border-radius: 10px;
   display: inline-block;

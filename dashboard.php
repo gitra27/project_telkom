@@ -113,16 +113,16 @@ $total_menit = floor(($total_durasi % 3600) / 60);
 </head>
 <body class="dashboard-body">
 <!-- Header -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: rgb(249, 250, 251);">
   <div class="container">
     <a class="navbar-brand d-flex align-items-center" href="#">
-      <img src="telkom.png" alt="Logo Telkom" height="40" class="me-2">
-      <span class="fw-bold">Sistem Absensi Karyawan</span>
+      <img src="telkom2.png" alt="Logo Telkom" height="50" width="100" class="me-3" style="filter: brightness(0) invert(1);">
+      <span class="fw-bold" style="color: #667085;">Sistem Absensi Karyawan</span>
     </a>
     <div class="navbar-nav ms-auto">
       <div class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
-          <i class="fas fa-user-circle me-2"></i>
+        <a class="nav-link dropdown-toggle d-flex align-items-center fs-5" href="#" role="button" data-bs-toggle="dropdown"  style="color: #667085;">
+          <i class="fas fa-user-circle me-2" style="color: #667085;"></i>
           <?= $nama; ?>
         </a>
         <ul class="dropdown-menu">
@@ -137,7 +137,7 @@ $total_menit = floor(($total_durasi % 3600) / 60);
 
 <div class="container-fluid py-4">
   <div class="row">
-    <!-- Sidebar -->
+    <!-- Sidebar + Informasi Karyawan -->
     <div class="col-lg-3 mb-4">
       <div class="card shadow-sm">
         <div class="card-body">
@@ -150,10 +150,25 @@ $total_menit = floor(($total_durasi % 3600) / 60);
             <small class="text-muted"><?= $departemen; ?></small>
           </div>
           <hr>
-          <div class="info-item">
+          <div class="info-item mb-2">
             <i class="fas fa-id-card text-primary me-2"></i>
             <span class="fw-semibold">NIK:</span>
-            <span class="text-muted"><?= $nik; ?></span>
+            <span class="text-muted ms-1"><?= $nik; ?></span>
+          </div>
+          <div class="info-item mb-2">
+            <i class="fas fa-briefcase text-primary me-2"></i>
+            <span class="fw-semibold">Jabatan:</span>
+            <span class="text-muted ms-1"><?= $jabatan; ?></span>
+          </div>
+          <div class="info-item mb-2">
+            <i class="fas fa-building text-primary me-2"></i>
+            <span class="fw-semibold">Departemen:</span>
+            <span class="text-muted ms-1"><?= $departemen; ?></span>
+          </div>
+          <div class="info-item">
+            <i class="fas fa-circle text-success me-2"></i>
+            <span class="fw-semibold">Status:</span>
+            <span class="text-muted ms-1">Aktif</span>
           </div>
         </div>
       </div>
@@ -172,7 +187,7 @@ $total_menit = floor(($total_durasi % 3600) / 60);
               </p>
             </div>
             <div class="col-md-4 text-md-end">
-              <div class="clock-display">
+              <div class="clock-display" style="color: #ffffff;">
                 <i class="fas fa-clock me-2"></i>
                 <span id="jam" class="fw-bold fs-4"></span>
               </div>
@@ -181,14 +196,13 @@ $total_menit = floor(($total_durasi % 3600) / 60);
         </div>
       </div>
 
-      <!-- Statistik Bulan Ini -->
       <div class="row mb-4">
         <div class="col-md-3 mb-3">
-          <div class="card shadow-sm border-0 bg-gradient-primary text-white">
+          <div class="card shadow-sm border-0 bg-white-primary text-white">
             <div class="card-body">
               <div class="d-flex justify-content-between align-items-center">
                 <div>
-                  <h6 class="text-white-50 mb-1">Total Hari</h6>
+                <h6 class="mb-1" style="color: #667085;">Total Hari</h6>
                   <h3 class="mb-0"><?= $stat_bulan['total_hari'] ?? 0; ?></h3>
                 </div>
                 <div class="stat-icon">
@@ -199,11 +213,11 @@ $total_menit = floor(($total_durasi % 3600) / 60);
           </div>
         </div>
         <div class="col-md-3 mb-3">
-          <div class="card shadow-sm border-0 bg-gradient-success text-white">
+          <div class="card shadow-sm border-0 bg-white-success text-white">
             <div class="card-body">
               <div class="d-flex justify-content-between align-items-center">
                 <div>
-                  <h6 class="text-white-50 mb-1">Hari Hadir</h6>
+                <h6 class="mb-1" style="color: #667085;">Hari Hadir</h6>
                   <h3 class="mb-0"><?= $stat_bulan['hari_hadir'] ?? 0; ?></h3>
                 </div>
                 <div class="stat-icon">
@@ -214,11 +228,11 @@ $total_menit = floor(($total_durasi % 3600) / 60);
           </div>
         </div>
         <div class="col-md-3 mb-3">
-          <div class="card shadow-sm border-0 bg-gradient-warning text-white">
+          <div class="card shadow-sm border-0 bg-white-warning text-white">
             <div class="card-body">
               <div class="d-flex justify-content-between align-items-center">
                 <div>
-                  <h6 class="text-white-50 mb-1">Terlambat</h6>
+                <h6 class="mb-1" style="color: #667085;">Terlambat</h6>
                   <h3 class="mb-0"><?= $stat_bulan['hari_terlambat'] ?? 0; ?></h3>
                 </div>
                 <div class="stat-icon">
@@ -229,11 +243,11 @@ $total_menit = floor(($total_durasi % 3600) / 60);
           </div>
         </div>
         <div class="col-md-3 mb-3">
-          <div class="card shadow-sm border-0 bg-gradient-info text-white">
+          <div class="card shadow-sm border-0 bg-white-info text-white">
             <div class="card-body">
               <div class="d-flex justify-content-between align-items-center">
                 <div>
-                  <h6 class="text-white-50 mb-1">Total Jam</h6>
+                <h6 class="mb-1" style="color: #667085;">Total Jam</h6>
                   <h3 class="mb-0"><?= $total_jam; ?>j</h3>
                 </div>
                 <div class="stat-icon">
@@ -246,7 +260,6 @@ $total_menit = floor(($total_durasi % 3600) / 60);
       </div>
 
       <div class="row">
-        <!-- Absensi Hari Ini -->
         <div class="col-lg-8 mb-4">
           <div class="card shadow-sm h-100">
             <div class="card-header bg-white">
@@ -257,7 +270,7 @@ $total_menit = floor(($total_durasi % 3600) / 60);
                 <!-- Belum Absen Masuk -->
                 <div class="text-center py-5">
                   <div class="absen-icon mb-4">
-                    <div class="absen-circle bg-warning text-white mx-auto mb-3">
+                  <div class="absen-circle text-white mx-auto mb-3" style="background-color: #667085;">
                       <i class="fas fa-clock fa-3x"></i>
                     </div>
                   </div>
@@ -293,9 +306,12 @@ $total_menit = floor(($total_durasi % 3600) / 60);
                   
                   <form method="post" action="absen.php" id="form-checkin" onsubmit="return confirmAbsen('masuk')">
                     <input type="hidden" name="aksi" value="masuk">
-                    <button type="submit" class="btn btn-primary btn-lg px-5 py-3 absen-btn">
-                      <i class="fas fa-sign-in-alt me-2"></i>Check In Sekarang
-                    </button>
+                    <button type="submit" 
+        class="btn btn-primary btn-lg px-5 py-3 absen-btn d-flex justify-content-center align-items-center mx-auto">
+    <i class="fas fa-sign-in-alt me-2"></i>
+    Check In Sekarang
+</button>
+
                   </form>
                   <p class="text-muted small mt-3">
                     <i class="fas fa-info-circle me-1"></i>
@@ -405,24 +421,10 @@ $total_menit = floor(($total_durasi % 3600) / 60);
             </div>
           </div>
         </div>
-
-        <!-- Grafik Kehadiran 7 Hari Terakhir -->
-        <div class="col-lg-4 mb-4">
-          <div class="card shadow-sm h-100">
-            <div class="card-header bg-white">
-              <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Grafik Kehadiran 7 Hari Terakhir</h5>
-            </div>
-            <div class="card-body">
-              <canvas id="kehadiranChart" height="250"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Calendar & Quick Actions -->
       <div class="row">
         <!-- Calendar View -->
-        <div class="col-lg-8 mb-4">
+        <div class="col-lg-9 mb-4">
           <div class="card shadow-sm">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
               <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Kalender Absensi Bulan Ini</h5>
@@ -509,49 +511,7 @@ $total_menit = floor(($total_durasi % 3600) / 60);
           </div>
         </div>
 
-        <!-- Quick Actions & Info -->
-        <div class="col-lg-4 mb-4">
-          <div class="card shadow-sm mb-3">
-            <div class="card-header bg-white">
-              <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
-            </div>
-            <div class="card-body">
-              <a href="riwayat_absen.php" class="btn btn-outline-primary w-100 mb-2">
-                <i class="fas fa-history me-2"></i>Riwayat Absensi
-              </a>
-              <button class="btn btn-outline-success w-100 mb-2" onclick="window.print()">
-                <i class="fas fa-print me-2"></i>Cetak Laporan
-              </button>
-              <button class="btn btn-outline-info w-100" data-bs-toggle="modal" data-bs-target="#infoModal">
-                <i class="fas fa-info-circle me-2"></i>Info Sistem
-              </button>
-            </div>
-          </div>
-
-          <div class="card shadow-sm">
-            <div class="card-header bg-white">
-              <h5 class="mb-0"><i class="fas fa-user-circle me-2"></i>Informasi Karyawan</h5>
-            </div>
-            <div class="card-body">
-              <div class="info-row mb-3">
-                <small class="text-muted d-block">NIK</small>
-                <strong><?= $nik; ?></strong>
-              </div>
-              <div class="info-row mb-3">
-                <small class="text-muted d-block">Jabatan</small>
-                <strong><?= $jabatan; ?></strong>
-              </div>
-              <div class="info-row mb-3">
-                <small class="text-muted d-block">Departemen</small>
-                <strong><?= $departemen; ?></strong>
-              </div>
-              <div class="info-row">
-                <small class="text-muted d-block">Status</small>
-                <span class="badge bg-success">Aktif</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- (kolom kanan dikosongkan / disiapkan untuk fitur lain) -->
       </div>
     </div>
   </div>
@@ -604,17 +564,16 @@ $total_menit = floor(($total_durasi % 3600) / 60);
      if(currentTimeOutEl) {
          currentTimeOutEl.textContent = timeString;
      }
- }
- setInterval(updateJam, 1000);
- updateJam();
- 
- // Konfirmasi sebelum absen
- function confirmAbsen(aksi) {
-     const actionText = aksi === 'masuk' ? 'Check In' : 'Check Out';
-     const waktu = new Date().toLocaleTimeString('id-ID');
-     return confirm(`Apakah Anda yakin ingin melakukan ${actionText} pada pukul ${waktu}?`);
- }
- </script>
+}
+setInterval(updateJam, 1000);
+updateJam();
+
+// Konfirmasi sebelum absen
+function confirmAbsen(aksi) {
+    const actionText = aksi === 'masuk' ? 'Check In' : 'Check Out';
+    const waktu = new Date().toLocaleTimeString('id-ID');
+    return confirm(`Apakah Anda yakin ingin melakukan ${actionText} pada pukul ${waktu}?`);
+}
 
 // Grafik Kehadiran
 const ctx = document.getElementById('kehadiranChart').getContext('2d');
@@ -623,7 +582,7 @@ let labels = [];
 let hadirData = [];
 let pulangData = [];
 
-if(kehadiranData.length > 0) {
+if (kehadiranData.length > 0) {
     labels = kehadiranData.map(d => {
         const date = new Date(d.tanggal);
         return date.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' });
@@ -632,7 +591,7 @@ if(kehadiranData.length > 0) {
     pulangData = kehadiranData.map(d => d.jam_pulang ? 1 : 0);
 } else {
     // Jika tidak ada data, tampilkan 7 hari terakhir kosong
-    for(let i = 6; i >= 0; i--) {
+    for (let i = 6; i >= 0; i--) {
         const date = new Date();
         date.setDate(date.getDate() - i);
         labels.push(date.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' }));
@@ -679,7 +638,7 @@ new Chart(ctx, {
                 max: 1,
                 ticks: {
                     stepSize: 1,
-                    callback: function(value) {
+                    callback: function (value) {
                         return value === 1 ? 'Ya' : 'Tidak';
                     }
                 }
