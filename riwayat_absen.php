@@ -71,20 +71,20 @@ $total_menit = floor(($total_durasi % 3600) / 60);
 </head>
 <body class="dashboard-body">
 <!-- Header -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: rgb(249, 250, 251);">
   <div class="container">
-    <a class="navbar-brand d-flex align-items-center" href="index.php">
-      <img src="telkom.png" alt="Logo Telkom" height="40" class="me-2">
-      <span class="fw-bold">Sistem Absensi Karyawan</span>
+    <a class="navbar-brand d-flex align-items-center" href="#">
+      <img src="telkom2.png" alt="Logo Telkom" height="50" width="100" class="me-3" style="filter: brightness(0) invert(1);">
+      <span class="fw-bold" style="color: #667085;">Sistem Absensi Karyawan</span>
     </a>
     <div class="navbar-nav ms-auto">
       <div class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
-          <i class="fas fa-user-circle me-2"></i>
+        <a class="nav-link dropdown-toggle d-flex align-items-center fs-5" href="#" role="button" data-bs-toggle="dropdown"  style="color: #667085;">
+          <i class="fas fa-user-circle me-2" style="color: #667085;"></i>
           <?= $nama; ?>
         </a>
         <ul class="dropdown-menu">
-          <li><a class="dropdown-item" href="dashboard.php"><i class="fas fa-home me-2"></i>Dashboard</a></li>
+          <li><a class="dropdown-item" href="riwayat_absen.php"><i class="fas fa-history me-2"></i>Riwayat Absensi</a></li>
           <li><hr class="dropdown-divider"></li>
           <li><a class="dropdown-item" href="logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
         </ul>
@@ -106,9 +106,9 @@ $total_menit = floor(($total_durasi % 3600) / 60);
           <form method="get" action="" class="d-flex gap-2">
             <input type="month" name="bulan" class="form-control" value="<?= $filter_bulan; ?>" onchange="this.form.submit()">
           </form>
-          <a href="dashboard.php" class="btn btn-outline-primary">
-            <i class="fas fa-arrow-left me-2"></i>Dashboard
-          </a>
+          <a href="dashboard.php" class="btn btn-outline-danger d-flex justify-content-center align-items-center">
+  <i class="fas fa-arrow-left me-2"></i>Dashboard
+</a>
           <button class="btn btn-primary" onclick="exportToCSV()">
             <i class="fas fa-download me-2"></i>Export CSV
           </button>
@@ -118,7 +118,7 @@ $total_menit = floor(($total_durasi % 3600) / 60);
       <!-- Stats Cards -->
       <div class="row mb-4">
         <div class="col-md-2 col-6 mb-3">
-          <div class="card bg-gradient-primary text-white shadow-sm">
+          <div class="card bg-gradient-white text-white shadow-sm">
             <div class="card-body text-center">
               <i class="fas fa-calendar-check fa-2x mb-2 opacity-75"></i>
               <h4 class="mb-1"><?= $total_hari; ?></h4>
@@ -127,7 +127,7 @@ $total_menit = floor(($total_durasi % 3600) / 60);
           </div>
         </div>
         <div class="col-md-2 col-6 mb-3">
-          <div class="card bg-gradient-success text-white shadow-sm">
+          <div class="card bg-gradient-white text-white shadow-sm">
             <div class="card-body text-center">
               <i class="fas fa-check-circle fa-2x mb-2 opacity-75"></i>
               <h4 class="mb-1"><?= $hari_hadir; ?></h4>
@@ -136,7 +136,7 @@ $total_menit = floor(($total_durasi % 3600) / 60);
           </div>
         </div>
         <div class="col-md-2 col-6 mb-3">
-          <div class="card bg-gradient-info text-white shadow-sm">
+          <div class="card bg-gradient-white text-white shadow-sm">
             <div class="card-body text-center">
               <i class="fas fa-check-double fa-2x mb-2 opacity-75"></i>
               <h4 class="mb-1"><?= $hari_lengkap; ?></h4>
@@ -145,7 +145,7 @@ $total_menit = floor(($total_durasi % 3600) / 60);
           </div>
         </div>
         <div class="col-md-2 col-6 mb-3">
-          <div class="card bg-gradient-warning text-white shadow-sm">
+          <div class="card bg-gradient-white text-white shadow-sm">
             <div class="card-body text-center">
               <i class="fas fa-clock fa-2x mb-2 opacity-75"></i>
               <h4 class="mb-1"><?= $hari_terlambat; ?></h4>
@@ -163,7 +163,7 @@ $total_menit = floor(($total_durasi % 3600) / 60);
           </div>
         </div>
         <div class="col-md-2 col-6 mb-3">
-          <div class="card bg-gradient-secondary text-white shadow-sm">
+          <div class="card bg-gradient-white text-white shadow-sm">
             <div class="card-body text-center">
               <i class="fas fa-hourglass-half fa-2x mb-2 opacity-75"></i>
               <h4 class="mb-1"><?= $total_jam; ?>j</h4>
