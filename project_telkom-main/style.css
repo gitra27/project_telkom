@@ -357,7 +357,7 @@ body {
 
 /* Statistik Cards */
 .bg-gradient-primary {
-  background: #80706b !important;
+  background: #6b7280 !important;
 }
 
 .bg-gradient-success {
@@ -581,9 +581,9 @@ body {
 }
 
 /* Outline buttons */
-.btn-outline-danger {
+.btn-outline-primary {
   border-color: #6b7280 !important;
-  color: #e60000 !important;
+  color: #6b7280 !important;
 }
 
 .btn-outline-primary:hover {
