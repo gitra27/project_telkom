@@ -8,11 +8,9 @@ if (isset($_POST['login'])) {
     $nik  = trim($_POST['nik']);
     $pass = $_POST['password'];
 
-    // CARI DATA
     $q = mysqli_query($conn, "SELECT * FROM tb_karyawan WHERE nama='$nama' AND nik='$nik'");
     $data = mysqli_fetch_assoc($q);
 
-    // VALIDASI
     if (!$data) {
         $_SESSION['error'] = "Nama atau NIK salah!";
     } else if ($data['account_active'] == 0) {
@@ -20,8 +18,6 @@ if (isset($_POST['login'])) {
     } else if (!password_verify($pass, $data['password'])) {
         $_SESSION['error'] = "Password salah!";
     } else {
-
-        // LOGIN SUKSES
         $_SESSION['nik']  = $data['nik'];
         $_SESSION['nama'] = $data['nama'];
 
@@ -32,37 +28,46 @@ if (isset($_POST['login'])) {
     header("Location: login.php");
     exit();
 }
-
 ob_end_flush();
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
+    <meta charset="UTF-8">
     <title>Login Sistem Absensi</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<?php if (isset($_SESSION['error'])): ?>
-<script>
-alert("<?= $_SESSION['error'] ?>");
-</script>
-<?php unset($_SESSION['error']); endif; ?>
+<div class="login-box">
+    <h2>Login Absensi</h2>
 
-<h2>Login</h2>
+    <?php if (isset($_SESSION['error'])): ?>
+        <script>
+            alert("<?= $_SESSION['error'] ?>");
+        </script>
+        <?php unset($_SESSION['error']); ?>
+    <?php endif; ?>
 
-<form method="POST">
-    <label>Nama</label><br>
-    <input type="text" name="nama" required><br>
+    <form method="POST">
+        <label>Nama</label>
+        <input type="text" name="nama" required>
 
-    <label>NIK</label><br>
-    <input type="text" name="nik" required><br>
+        <label>NIK</label>
+        <input type="text" name="nik" required>
 
-    <label>Password</label><br>
-    <input type="password" name="password" required><br><br>
+        <label>Password</label>
+        <input type="password" name="password" required>
 
-    <button type="submit" name="login">LOGIN</button>
-</form>
+        <button type="submit" name="login">LOGIN</button>
+    </form>
+
+    <div class="footer-text">
+        © Sistem Absensi
+    </div>
+</div>
 
 </body>
 </html>

@@ -186,7 +186,7 @@ if ($hq) while($r = mysqli_fetch_assoc($hq)) $history[] = $r;
 <style>
 :root{--telkom:#ff0033}
 body{background:#f4f6f9;font-family:Inter,Arial,Helvetica,sans-serif}
-.header{background:#fff;border-bottom:1px solid #e6e9ee;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
+.header{background:#fff;border-bottom:1px solid #ffffff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
 .brand{display:flex;align-items:center;gap:12px}
 .brand img{height:40px}
 .telkom{color:var(--telkom)}
@@ -213,8 +213,8 @@ body{background:#f4f6f9;font-family:Inter,Arial,Helvetica,sans-serif}
 
   <div style="display:flex;gap:12px;align-items:center">
     <div id="datetime" class="small-muted text-end"></div>
-    <a href="riwayat_absen.php" class="btn btn-outline-secondary btn-sm">Riwayat</a>
-    <a href="logout.php" class="btn btn-outline-dark btn-sm">Logout</a>
+    <a href="riwayat_absen.php" class="btn btn-outline-danger btn-sm">Riwayat</a>
+    <a href="logout.php" class="btn btn-outline-danger btn-sm">Logout</a>
   </div>
 </div>
 
@@ -340,7 +340,7 @@ body{background:#f4f6f9;font-family:Inter,Arial,Helvetica,sans-serif}
 
             <div class="d-flex gap-2">
               <button type="button" class="btn btn-telkom" onclick="submitAbsen('masuk')">Kirim Absen Masuk</button>
-              <button type="button" class="btn btn-outline-secondary" onclick="submitAbsen('izin')">Kirim Izin</button>
+              <button type="button" class="btn btn-outline-primary" onclick="submitAbsen('izin')">Kirim Izin</button>
               <button type="button" class="btn btn-outline-warning" onclick="submitAbsen('sakit')">Kirim Sakit</button>
             </div>
             <div class="small-muted mt-2">Catatan: Absen masuk: jam 08.00–09.00 (lebih dari 09.00 = Telat)</div>
