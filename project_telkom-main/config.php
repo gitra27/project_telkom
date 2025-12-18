@@ -11,7 +11,6 @@ if (!$conn) {
     die("Koneksi gagal: " . mysqli_connect_error());
 }
 
-session_start();
 
 // auto nonaktif jika masa PKL selesai
 mysqli_query($conn, "
