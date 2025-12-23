@@ -1,9 +1,4 @@
 <?php
-/* =====================================================
-   proses login admin
-   ===================================================== */
-
-session_start();
 include "../config.php";
 
 $error = false;
@@ -40,7 +35,7 @@ if (isset($_POST['login'])) {
                 'lantai'     => $data['lantai']
             ];
 
-            header("location: dashboard_admin.php");
+            header("location: admin_dashboard.php");
             exit;
         }
     }
@@ -52,29 +47,30 @@ if (isset($_POST['login'])) {
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>login admin</title>
+    <title>Login Admin</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="login-box">
 
-    <h2>login admin</h2>
+    <h2>Login Admin</h2>
 
     <?php if ($error): ?>
-        <div class="error">data admin tidak cocok</div>
+        <div class="error">Data Admin Tidak Cocok</div>
     <?php endif; ?>
 
     <form method="post">
 
-        <label>nama admin</label>
+        <label>Nama Admin</label>
         <input type="text" name="nama_admin" required>
 
-        <label>nik admin</label>
+        <label>Nik Admin</label>
         <input type="text" name="nik_admin" required>
 
-        <label>lantai admin</label>
+        <label>Lantai Admin</label>
         <select name="lantai" required>
-            <option value="">- pilih lantai -</option>
+            <option value="">- Pilih Lantai -</option>
             <option value="1">1</option>
             <option value="2">2</option>
             <option value="3">3</option>
@@ -82,10 +78,10 @@ if (isset($_POST['login'])) {
             <option value="6">6</option>
         </select>
 
-        <label>password admin</label>
+        <label>Password Admin</label>
         <input type="password" name="password_admin" required>
 
-        <button type="submit" name="login">login</button>
+        <button type="submit" name="login">Login</button>
     </form>
 
 </div>
@@ -98,7 +94,7 @@ if (isset($_POST['login'])) {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: arial, sans-serif;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
 }
 
 body {
@@ -106,14 +102,14 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    background-color: #f4f6f9;
 }
 
 .login-box {
     width: 420px;
-    background: #fff;
+    background: rgba(255, 255, 255, 1);
     padding: 30px;
     border-radius: 10px;
-    box-shadow: 0 0 25px rgba(255,49,49,.35);
 }
 
 .login-box h2 {

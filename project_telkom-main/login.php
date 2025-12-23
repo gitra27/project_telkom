@@ -8,8 +8,12 @@ if (isset($_POST['login'])) {
     $nik  = trim($_POST['nik']);
     $pass = $_POST['password'];
 
-    $q = mysqli_query($conn, "SELECT * FROM tb_karyawan WHERE nama='$nama' AND nik='$nik'");
-    $data = mysqli_fetch_assoc($q);
+    // Prevent SQL injection with prepared statements
+    $stmt = mysqli_prepare($conn, "SELECT * FROM tb_karyawan WHERE nama = ? AND nik = ?");
+    mysqli_stmt_bind_param($stmt, "ss", $nama, $nik);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $data = mysqli_fetch_assoc($result);
 
     if (!$data) {
         $_SESSION['error'] = "Nama atau NIK salah!";
@@ -24,9 +28,6 @@ if (isset($_POST['login'])) {
         header("Location: dashboard.php");
         exit();
     }
-
-    header("Location: login.php");
-    exit();
 }
 ob_end_flush();
 ?>

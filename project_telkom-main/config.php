@@ -1,5 +1,5 @@
 <?php
-// koneksi ke database
+session_start();
 $host = "localhost";
 $user = "root";
 $pass = "";
@@ -11,8 +11,6 @@ if (!$conn) {
     die("Koneksi gagal: " . mysqli_connect_error());
 }
 
-
-// auto nonaktif jika masa PKL selesai
 mysqli_query($conn, "
     UPDATE tb_karyawan
     SET account_active = 0

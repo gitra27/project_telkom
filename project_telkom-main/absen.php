@@ -1,20 +1,25 @@
 <?php
 include 'config.php';
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['nik'])) {
     header("Location: login.php");
     exit;
 }
-$user_id = $_SESSION['user_id'];
 $nik = $_SESSION['nik'];
 $tanggal = date("Y-m-d");
 $aksi = $_POST['aksi'];
 
 if ($aksi == "masuk") {
     $jam = date("H:i:s");
-    $conn->query("INSERT INTO tb_absensi (nik, tanggal, jam_masuk) VALUES ('$nik','$tanggal','$jam')");
+    // Prevent SQL injection
+    $stmt = mysqli_prepare($conn, "INSERT INTO tb_absensi (nik, tanggal, jam_masuk) VALUES (?, ?, ?)");
+    mysqli_stmt_bind_param($stmt, "sss", $nik, $tanggal, $jam);
+    mysqli_stmt_execute($stmt);
 } elseif ($aksi == "pulang") {
     $jam = date("H:i:s");
-    $conn->query("UPDATE tb_absensi SET jam_pulang='$jam' WHERE nik='$nik' AND tanggal='$tanggal'");
+    // Prevent SQL injection
+    $stmt = mysqli_prepare($conn, "UPDATE tb_absensi SET jam_pulang = ? WHERE nik = ? AND tanggal = ?");
+    mysqli_stmt_bind_param($stmt, "sss", $jam, $nik, $tanggal);
+    mysqli_stmt_execute($stmt);
 }
 
 header("Location: dashboard.php");

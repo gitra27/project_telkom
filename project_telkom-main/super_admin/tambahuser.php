@@ -2,30 +2,53 @@
 include "../config.php";
 
 if (isset($_POST['save'])) {
+    
+    $nama   = trim($_POST['nama']);
+    $nik    = trim($_POST['nik']);
+    $asal   = trim($_POST['asal_sekolah']);
+    $lantai = trim($_POST['lantai']);
+    $start  = trim($_POST['start_date']);
+    $end    = trim($_POST['end_date']);
+    $password = trim($_POST['password']);
 
-    $nama   = $_POST['nama'];
-    $nik    = $_POST['nik'];
-    $asal   = $_POST['asal_sekolah'];
-    $lantai = $_POST['lantai'];
-    $start  = $_POST['start_date'];
-    $end    = $_POST['end_date'];
-
-    // Hash password agar aman
-    $password_hash = password_hash($_POST['password'], PASSWORD_DEFAULT);
-
-    // Query insert user baru
-    $query = mysqli_query($conn, "
-        INSERT INTO tb_karyawan(nama, nik, password, asal_sekolah, lantai, start_date, end_date)
-        VALUES ('$nama', '$nik', '$password_hash', '$asal', '$lantai', '$start', '$end')
-    ");
-
-    if ($query) {
-        echo "<script>
-                alert('User berhasil ditambahkan!');
-                window.location='data_user.php';
-              </script>";
+    // Validasi input
+    if (empty($nama) || empty($nik) || empty($password)) {
+        echo "<script>alert('Nama, NIK, dan password wajib diisi!');</script>";
     } else {
-        echo "<script>alert('Gagal menambahkan user!');</script>";
+        // Cek apakah NIK sudah ada
+        $check_query = mysqli_prepare($conn, "SELECT nik FROM tb_karyawan WHERE nik = ?");
+        mysqli_stmt_bind_param($check_query, "s", $nik);
+        mysqli_stmt_execute($check_query);
+        $result = mysqli_stmt_get_result($check_query);
+        
+        if (mysqli_num_rows($result) > 0) {
+            echo "<script>alert('NIK $nik sudah terdaftar! Gunakan NIK yang lain.');</script>";
+        } else {
+            // Hash password agar aman
+            $password_hash = password_hash($password, PASSWORD_DEFAULT);
+            
+            // Query insert user baru dengan prepared statement
+            $insert_query = mysqli_prepare($conn, "
+                INSERT INTO tb_karyawan(nama, nik, password, asal_sekolah, lantai, start_date, end_date)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ");
+            
+            mysqli_stmt_bind_param($insert_query, "sssssss", 
+                $nama, $nik, $password_hash, $asal, $lantai, $start, $end);
+            
+            if (mysqli_stmt_execute($insert_query)) {
+                echo "<script>
+                        alert('User berhasil ditambahkan!');
+                        window.location='data_user.php';
+                      </script>";
+            } else {
+                echo "<script>alert('Gagal menambahkan user!');</script>";
+            }
+            
+            mysqli_stmt_close($insert_query);
+        }
+        
+        mysqli_stmt_close($check_query);
     }
 }
 ?>

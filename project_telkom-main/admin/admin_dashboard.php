@@ -1,31 +1,20 @@
 <?php
 session_start();
 
-/* ===============================
-   KONEKSI DATABASE
-   =============================== */
 $conn = mysqli_connect("localhost","root","","db_karyawan2");
 if(!$conn){
     die("koneksi database gagal");
 }
 
-/* ===============================
-   PROTEKSI ADMIN
-   =============================== */
+
 if(!isset($_SESSION['admin'])){
     header("location: login_admin.php");
     exit;
 }
 
-/* ===============================
-   DATA ADMIN (SESSION)
-   =============================== */
 $nama_admin   = $_SESSION['admin']['nama_admin'];
 $lantai_admin = $_SESSION['admin']['lantai'];
 
-/* ===============================
-   TAMBAH USER PER LANTAI
-   =============================== */
 if(isset($_POST['tambah_user'])){
     $nik_user  = $_POST['nik_user'];
     $nama_user = $_POST['nama_user'];
@@ -43,44 +32,35 @@ if(isset($_POST['tambah_user'])){
     ");
 }
 
-/* ===============================
-   FILTER BULAN & TAHUN
-   =============================== */
 $bulan = $_GET['bulan'] ?? date('m');
 $tahun = $_GET['tahun'] ?? date('Y');
 
-/* ===============================
-   SUMMARY ABSENSI
-   =============================== */
 $q_summary = mysqli_query($conn,"
     SELECT 
         COUNT(*) as total,
-        SUM(status='hadir') as hadir,
-        SUM(status='izin') as izin,
-        SUM(status='alpha') as alpha
-    FROM tb_absensi
-    WHERE lantai='$lantai_admin'
-    AND MONTH(tanggal)='$bulan'
-    AND YEAR(tanggal)='$tahun'
+        SUM(a.status='hadir') as hadir,
+        SUM(a.status='izin') as izin,
+        SUM(a.status='alpha') as alpha
+    FROM tb_absensi a
+    JOIN tb_karyawan k ON a.nik = k.nik
+    WHERE k.lantai='$lantai_admin'
+    AND MONTH(a.tanggal)='$bulan'
+    AND YEAR(a.tanggal)='$tahun'
 ");
 $summary = mysqli_fetch_assoc($q_summary);
 
-/* ===============================
-   DATA USER PER LANTAI
-   =============================== */
 $q_user = mysqli_query($conn,"
-    SELECT * FROM tb_user
+    SELECT * FROM tb_karyawan
     WHERE lantai='$lantai_admin'
     ORDER BY nama ASC
 ");
 
-/* ===============================
-   RIWAYAT ABSENSI
-   =============================== */
 $q_absen = mysqli_query($conn,"
-    SELECT * FROM tb_absensi
-    WHERE lantai='$lantai_admin'
-    ORDER BY tanggal DESC, jam_masuk DESC
+    SELECT a.*, k.nama, k.lantai 
+    FROM tb_absensi a
+    JOIN tb_karyawan k ON a.nik = k.nik
+    WHERE k.lantai='$lantai_admin'
+    ORDER BY a.tanggal DESC, a.jam_masuk DESC
 ");
 ?>
 
@@ -88,222 +68,274 @@ $q_absen = mysqli_query($conn,"
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>admin dashboard absensi</title>
-
-<style>
-*{box-sizing:border-box}
-body{
-    margin:0;
-    font-family:'Segoe UI',sans-serif;
-    background:#f2f2f2;
-}
-
-/* ===== TOPBAR ===== */
-.topbar{
-    background:#b30000;
-    color:white;
-    padding:16px 25px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-}
-.topbar h1{
-    margin:0;
-    font-size:20px;
-}
-
-/* ===== CONTAINER ===== */
-.container{
-    padding:25px;
-}
-
-/* ===== SUMMARY ===== */
-.summary{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-    gap:20px;
-    margin-bottom:25px;
-}
-.box{
-    background:white;
-    padding:20px;
-    border-left:6px solid #b30000;
-    box-shadow:0 4px 10px rgba(0,0,0,.1);
-}
-.box h2{
-    margin:0;
-    font-size:28px;
-    color:#b30000;
-}
-.box p{
-    margin-top:5px;
-    color:#555;
-}
-
-/* ===== CARD ===== */
-.card{
-    background:white;
-    padding:20px;
-    margin-bottom:25px;
-    box-shadow:0 4px 10px rgba(0,0,0,.1);
-}
-.card h3{
-    margin-top:0;
-    color:#b30000;
-}
-
-/* ===== FORM ===== */
-.filter{
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-}
-input,select,button{
-    padding:8px 10px;
-    border-radius:4px;
-    border:1px solid #ccc;
-}
-.btn{
-    background:#b30000;
-    color:white;
-    border:none;
-    cursor:pointer;
-}
-.btn:hover{
-    background:#800000;
-}
-
-/* ===== TABLE ===== */
-table{
-    width:100%;
-    border-collapse:collapse;
-    font-size:14px;
-}
-th{
-    background:black;
-    color:white;
-    padding:10px;
-}
-td{
-    padding:8px;
-    border-bottom:1px solid #ddd;
-}
-tr:hover{
-    background:#f9f9f9;
-}
-
-/* ===== STATUS ===== */
-.badge{
-    padding:4px 8px;
-    color:white;
-    border-radius:4px;
-    font-size:12px;
-}
-.hadir{background:#28a745}
-.izin{background:#ffc107;color:black}
-.alpha{background:#dc3545}
-</style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard - Sistem Absensi</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="style_admin.css">
 </head>
-
 <body>
 
-<div class="topbar">
-    <h1>admin dashboard absensi</h1>
-    <span><?= $nama_admin ?> | lantai <?= $lantai_admin ?></span>
+<div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-chart-line"></i> Absensi System</h3>
+        </div>
+        <nav class="sidebar-menu">
+            <a href="#" class="menu-item active">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-users"></i>
+                <span>Data Karyawan</span>
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-calendar-check"></i>
+                <span>Absensi</span>
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-chart-bar"></i>
+                <span>Laporan</span>
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-cog"></i>
+                <span>Pengaturan</span>
+            </a>
+            <a href="login_admin.php" class="menu-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Navigation -->
+        <div class="top-nav">
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search...">
+            </div>
+            <div class="nav-actions">
+                <button class="notification-btn">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge">3</span>
+                </button>
+                <div class="user-profile">
+                    <div class="user-avatar">A</div>
+                    <div class="user-info">
+                        <h4>Admin</h4>
+                        <p>Lantai <?= htmlspecialchars($lantai_admin) ?></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-title">Total Absensi</div>
+                    <div class="stat-icon blue">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                <div class="stat-value"><?= $summary['total'] ?? 0 ?></div>
+                <div class="stat-change positive">
+                    <i class="fas fa-arrow-up"></i> 12% dari bulan lalu
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-title">Hadir</div>
+                    <div class="stat-icon green">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+                <div class="stat-value"><?= $summary['hadir'] ?? 0 ?></div>
+                <div class="stat-change positive">
+                    <i class="fas fa-arrow-up"></i> 8% dari bulan lalu
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-title">Izin</div>
+                    <div class="stat-icon yellow">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                </div>
+                <div class="stat-value"><?= $summary['izin'] ?? 0 ?></div>
+                <div class="stat-change negative">
+                    <i class="fas fa-arrow-down"></i> 3% dari bulan lalu
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-title">Alpha</div>
+                    <div class="stat-icon red">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                </div>
+                <div class="stat-value"><?= $summary['alpha'] ?? 0 ?></div>
+                <div class="stat-change positive">
+                    <i class="fas fa-arrow-down"></i> 5% dari bulan lalu
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3 class="chart-title">Filter Data Absensi</h3>
+                <div class="chart-tabs">
+                    <button class="tab-btn active">Hari Ini</button>
+                    <button class="tab-btn">Minggu Ini</button>
+                    <button class="tab-btn">Bulan Ini</button>
+                </div>
+            </div>
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Bulan</label>
+                    <select name="bulan" class="form-control">
+                        <?php for($i=1; $i<=12; $i++): ?>
+                            <option value="<?= $i ?>" <?= ($bulan == $i) ? 'selected' : '' ?>>
+                                <?= date('F', mktime(0,0,0,$i,1)) ?>
+                            </option>
+                        <?php endfor; ?>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Tahun</label>
+                    <select name="tahun" class="form-control">
+                        <?php for($i=date('Y'); $i>=date('Y')-5; $i--): ?>
+                            <option value="<?= $i ?>" <?= ($tahun == $i) ? 'selected' : '' ?>>
+                                <?= $i ?>
+                            </option>
+                        <?php endfor; ?>
+                    </select>
+                </div>
+                <div class="col-md-auto">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-2"></i>Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="row">
+            <!-- Tambah User Form -->
+            <div class="col-lg-4">
+                <div class="form-container">
+                    <h3 class="chart-title">Tambah User</h3>
+                    <form method="POST">
+                        <div class="form-group">
+                            <label class="form-label">NIK User</label>
+                            <input type="text" name="nik_user" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Nama User</label>
+                            <input type="text" name="nama_user" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Password Awal</label>
+                            <input type="password" name="password" class="form-control" required>
+                        </div>
+                        <button type="submit" name="tambah_user" class="btn btn-primary w-100">
+                            <i class="fas fa-plus me-2"></i>Tambah User
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Data User Table -->
+            <div class="col-lg-8">
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3 class="table-title">Data User</h3>
+                        <div class="table-actions">
+                            <button class="btn-sm btn-primary">
+                                <i class="fas fa-download me-1"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>NIK</th>
+                                <th>Nama</th>
+                                <th>Lantai</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php while($user = mysqli_fetch_assoc($q_user)): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($user['nik']) ?></td>
+                                    <td><?= htmlspecialchars($user['nama']) ?></td>
+                                    <td><?= htmlspecialchars($user['lantai']) ?></td>
+                                    <td>
+                                        <span class="status-badge active">Active</span>
+                                    </td>
+                                </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Riwayat Absensi Table -->
+        <div class="table-container">
+            <div class="table-header">
+                <h3 class="table-title">Riwayat Absensi</h3>
+                <div class="table-actions">
+                    <button class="btn-sm">
+                        <i class="fas fa-filter me-1"></i> Filter
+                    </button>
+                    <button class="btn-sm btn-primary">
+                        <i class="fas fa-download me-1"></i> Export
+                    </button>
+                </div>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Nama</th>
+                        <th>Masuk</th>
+                        <th>Pulang</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while($absen = mysqli_fetch_assoc($q_absen)): ?>
+                        <tr>
+                            <td><?= date('d/m/Y', strtotime($absen['tanggal'])) ?></td>
+                            <td><?= htmlspecialchars($absen['nama']) ?></td>
+                            <td><?= $absen['jam_masuk'] ?: '-' ?></td>
+                            <td><?= $absen['jam_pulang'] ?: '-' ?></td>
+                            <td>
+                                <span class="status-badge <?= strtolower($absen['status']) ?>">
+                                    <?= htmlspecialchars($absen['status']) ?>
+                                </span>
+                            </td>
+                        </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
+        </div>
+
+    </main>
 </div>
 
-<div class="container">
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- FILTER -->
-<div class="card">
-<form class="filter" method="GET">
-    <select name="bulan">
-        <?php for($i=1;$i<=12;$i++): ?>
-        <option value="<?= $i ?>" <?= ($bulan==$i)?'selected':'' ?>>
-            bulan <?= $i ?>
-        </option>
-        <?php endfor; ?>
-    </select>
-
-    <select name="tahun">
-        <?php for($t=date('Y')-1;$t<=date('Y');$t++): ?>
-        <option value="<?= $t ?>" <?= ($tahun==$t)?'selected':'' ?>>
-            <?= $t ?>
-        </option>
-        <?php endfor; ?>
-    </select>
-
-    <button class="btn">filter</button>
-</form>
-</div>
-
-<!-- SUMMARY -->
-<div class="summary">
-    <div class="box"><h2><?= $summary['total'] ?></h2><p>total absensi</p></div>
-    <div class="box"><h2><?= $summary['hadir'] ?></h2><p>hadir</p></div>
-    <div class="box"><h2><?= $summary['izin'] ?></h2><p>izin</p></div>
-    <div class="box"><h2><?= $summary['alpha'] ?></h2><p>alpha</p></div>
-</div>
-
-<!-- TAMBAH USER -->
-<div class="card">
-<h3>tambah user lantai <?= $lantai_admin ?></h3>
-<form method="POST" class="filter">
-    <input type="text" name="nik_user" placeholder="nik user" required>
-    <input type="text" name="nama_user" placeholder="nama user" required>
-    <input type="password" name="password" placeholder="password awal" required>
-    <button class="btn" name="tambah_user">tambah</button>
-</form>
-</div>
-
-<!-- DATA USER -->
-<div class="card">
-<h3>data user lantai <?= $lantai_admin ?></h3>
-<table>
-<tr>
-    <th>nik</th>
-    <th>nama</th>
-    <th>lantai</th>
-    <th>dibuat</th>
-</tr>
-<?php while($u=mysqli_fetch_assoc($q_user)): ?>
-<tr>
-    <td><?= $u['nik'] ?></td>
-    <td><?= $u['nama'] ?></td>
-    <td><?= $u['lantai'] ?></td>
-    <td><?= $u['created_at'] ?></td>
-</tr>
-<?php endwhile; ?>
-</table>
-</div>
-
-<!-- RIWAYAT ABSENSI -->
-<div class="card">
-<h3>riwayat absensi lantai <?= $lantai_admin ?></h3>
-<table>
-<tr>
-    <th>nik</th>
-    <th>nama</th>
-    <th>tanggal</th>
-    <th>masuk</th>
-    <th>pulang</th>
-    <th>status</th>
-    <th>catatan</th>
-</tr>
-<?php while($a=mysqli_fetch_assoc($q_absen)): ?>
-<tr>
-    <td><?= $a['nik'] ?></td>
-    <td><?= $a['nama'] ?></td>
-    <td><?= $a['tanggal'] ?></td>
-    <td><?= $a['jam_masuk'] ?></td>
-    <td><?= $a['jam_pulang'] ?></td>
-    <td><span class="badge <?= $a['status'] ?>"><?= $a['status'] ?></span></td>
-    <td><?= $a['catatan'] ?></td>
-</tr>
-<?php endwhile; ?>
-</table>
-</div>
-
-</div>
 </body>
 </html>

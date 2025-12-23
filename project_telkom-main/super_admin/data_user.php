@@ -13,12 +13,13 @@ if(isset($_GET['hapus'])){
 <html>
 <head>
     <title>Data User</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <h2>Data User</h2>
 
-<a href="tambahuser.php">+ Tambah User</a>
+<a href="tambahuser.php" class="btn-tambah">+ Tambah User</a>
 <br><br>
 
 <table border="1" cellpadding="8">

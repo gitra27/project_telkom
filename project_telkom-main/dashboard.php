@@ -82,26 +82,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // ACTIONS
         if ($action === 'masuk') {
-            // location required
-            if ($lat === '' || $lon === '') { $err = "Lokasi wajib untuk absen masuk."; }
-            else {
-                // determine status: <=09:00 => Hadir, >09:00 => Telat
-                $jam_limit = strtotime(date('Y-m-d').' 09:00:00');
-                $is_late = time() > $jam_limit;
-                $status = $is_late ? 'Telat' : 'Hadir';
-                if ($exists) {
-                    // update if jam_masuk empty
-                    if (empty($row['jam_masuk'])) {
-                        $sql = "UPDATE tb_absensi SET jam_masuk='$time_now', status='".esc($status)."', catatan='".mysqli_real_escape_string($conn,$catatan)."', foto='".mysqli_real_escape_string($conn,$uploaded_foto)."', file_upload='".mysqli_real_escape_string($conn,$uploaded_file)."', latitude='".esc($lat)."', longitude='".esc($lon)."', maps_url='".mysqli_real_escape_string($conn,$maps_url)."' WHERE id_absen='".$row['id_absen']."'";
+            // Validasi waktu absen masuk (08:00 - 08:15)
+            $current_time = time();
+            $start_time = strtotime(date('Y-m-d').' 08:00:00');
+            $end_time = strtotime(date('Y-m-d').' 08:15:00');
+            
+            if ($current_time < $start_time) {
+                $err = "Absen masuk hanya bisa dilakukan mulai pukul 08:00.";
+            } elseif ($current_time > $end_time) {
+                $err = "Absen masuk sudah ditutup. Paling lambat pukul 08:15.";
+            } else {
+                // location required
+                if ($lat === '' || $lon === '') { 
+                    $err = "Lokasi wajib untuk absen masuk."; 
+                } else {
+                    // determine status: 08:00-08:15 = Hadir (tidak ada telat)
+                    $status = 'Hadir';
+                    
+                    if ($exists) {
+                        // update if jam_masuk empty
+                        if (empty($row['jam_masuk'])) {
+                            $sql = "UPDATE tb_absensi SET jam_masuk='$time_now', status='".esc($status)."' WHERE id_absen='".$row['id_absen']."'";
+                            mysqli_query($conn, $sql);
+                            $msg = "Absen masuk tercatat. Status: $status";
+                        } else {
+                            $err = "Absen masuk sudah tercatat hari ini.";
+                        }
+                    } else {
+                        $sql = "INSERT INTO tb_absensi (nik,tanggal,jam_masuk,status) VALUES ('".esc($nik)."','$today','$time_now','".esc($status)."')";
                         mysqli_query($conn, $sql);
                         $msg = "Absen masuk tercatat. Status: $status";
-                    } else {
-                        $err = "Absen masuk sudah tercatat hari ini.";
                     }
-                } else {
-                    $sql = "INSERT INTO tb_absensi (nik,tanggal,jam_masuk,status,catatan,foto,file_upload,latitude,longitude,maps_url) VALUES ('".esc($nik)."','$today','$time_now','".esc($status)."','".mysqli_real_escape_string($conn,$catatan)."','".mysqli_real_escape_string($conn,$uploaded_foto)."','".mysqli_real_escape_string($conn,$uploaded_file)."','".esc($lat)."','".esc($lon)."','".mysqli_real_escape_string($conn,$maps_url)."')";
-                    mysqli_query($conn, $sql);
-                    $msg = "Absen masuk tercatat. Status: $status";
                 }
             }
         }
@@ -111,11 +122,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             else {
                 if (!empty($row['jam_pulang'])) $err = "Absen pulang sudah tercatat.";
                 else {
-                    if ($lat === '' || $lon === '') { $err = "Lokasi wajib untuk absen pulang."; }
-                    else {
-                        $sql = "UPDATE tb_absensi SET jam_pulang='$time_now', status='Selesai', latitude_pulang='".esc($lat)."', longitude_pulang='".esc($lon)."', maps_url_pulang='".mysqli_real_escape_string($conn,$maps_url)."' WHERE id_absen='".$row['id_absen']."'";
-                        mysqli_query($conn, $sql);
-                        $msg = "Absen pulang tercatat. Terima kasih.";
+                    // Validasi waktu absen pulang (mulai 16:30)
+                    $current_time = time();
+                    $pulang_time = strtotime(date('Y-m-d').' 16:30:00');
+                    
+                    if ($current_time < $pulang_time) {
+                        $err = "Absen pulang hanya bisa dilakukan mulai pukul 16:30.";
+                    } else {
+                        if ($lat === '' || $lon === '') { 
+                            $err = "Lokasi wajib untuk absen pulang."; 
+                        } else {
+                            // Cek apakah ada catatan keterlambatan
+                            $keterangan = $_POST['keterangan_pulang'] ?? '';
+                            if ($current_time > $pulang_time && empty($keterangan)) {
+                                $err = "Wajib mengisi catatan/alasan karena pulang setelah jam 16:30.";
+                            } else {
+                                $sql = "UPDATE tb_absensi SET jam_pulang='$time_now', status='Selesai' WHERE id_absen='".$row['id_absen']."'";
+                                mysqli_query($conn, $sql);
+                                $msg = "Absen pulang tercatat. Terima kasih.";
+                                // Refresh halaman untuk menampilkan form absen pagi kembali
+                                echo "<script>setTimeout(function(){ window.location.reload(); }, 2000);</script>";
+                            }
+                        }
                     }
                 }
             }
@@ -128,9 +156,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $status = ($action === 'izin') ? 'Izin' : 'Sakit';
                 if ($exists) {
-                    mysqli_query($conn, "UPDATE tb_absensi SET jam_masuk=NULL, jam_pulang=NULL, status='".esc($status)."', catatan='".mysqli_real_escape_string($conn,$catatan)."', file_upload='".mysqli_real_escape_string($conn,$uploaded_file)."' WHERE id_absen='".$row['id_absen']."'");
+                    mysqli_query($conn, "UPDATE tb_absensi SET jam_masuk=NULL, jam_pulang=NULL, status='".esc($status)."' WHERE id_absen='".$row['id_absen']."'");
                 } else {
-                    mysqli_query($conn, "INSERT INTO tb_absensi (nik,tanggal,status,catatan,file_upload) VALUES ('".esc($nik)."','$today','".esc($status)."','".mysqli_real_escape_string($conn,$catatan)."','".mysqli_real_escape_string($conn,$uploaded_file)."')");
+                    mysqli_query($conn, "INSERT INTO tb_absensi (nik,tanggal,status) VALUES ('".esc($nik)."','$today','".esc($status)."')");
                 }
                 $msg = "Status $status tercatat untuk hari ini.";
             }
@@ -139,9 +167,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         elseif ($action === 'save_note') {
             // save or update note
             if ($exists) {
-                mysqli_query($conn, "UPDATE tb_absensi SET catatan='".mysqli_real_escape_string($conn,$catatan)."' WHERE id_absen='".$row['id_absen']."'");
+                mysqli_query($conn, "UPDATE tb_absensi SET status='Catatan Disimpan' WHERE id_absen='".$row['id_absen']."'");
             } else {
-                mysqli_query($conn, "INSERT INTO tb_absensi (nik,tanggal,status,catatan) VALUES ('".esc($nik)."','$today','Belum Absen','".mysqli_real_escape_string($conn,$catatan)."')");
+                mysqli_query($conn, "INSERT INTO tb_absensi (nik,tanggal,status) VALUES ('".esc($nik)."','$today','Belum Absen')");
             }
             $msg = "Catatan disimpan.";
         }
@@ -183,38 +211,337 @@ if ($hq) while($r = mysqli_fetch_assoc($hq)) $history[] = $r;
 <title>Dashboard Presensi - <?= esc($nama) ?></title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-:root{--telkom:#ff0033}
-body{background:#f4f6f9;font-family:Inter,Arial,Helvetica,sans-serif}
-.header{background:#fff;border-bottom:1px solid #ffffff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
-.brand{display:flex;align-items:center;gap:12px}
-.brand img{height:40px}
-.telkom{color:var(--telkom)}
-.card-profile{border-radius:12px}
-.avatar{width:80px;height:80px;border-radius:50%;object-fit:cover}
-.stat-card{border-radius:10px}
-.small-muted{font-size:13px;color:#6b7280}
-.upload-preview{max-width:120px;max-height:120px;object-fit:cover;border-radius:8px}
-.table-scroll{max-height:420px;overflow:auto}
-.badge-telkom{background:var(--telkom);color:#fff}
+:root{
+  --telkom-primary:#e31937;
+  --telkom-secondary:#003d7a;
+  --telkom-accent:#ff6b35;
+  --telkom-light:#f8f9fa;
+  --telkom-dark:#2c3e50;
+  --telkom-gray:#6c757d;
+  --telkom-success:#28a745;
+  --telkom-warning:#ffc107;
+  --telkom-danger:#dc3545;
+  --gradient-telkom:linear-gradient(135deg, var(--telkom-primary) 0%, var(--telkom-secondary) 100%);
+  --gradient-card:linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+  --shadow-sm:0 2px 4px rgba(0,0,0,0.08);
+  --shadow-md:0 4px 12px rgba(0,0,0,0.12);
+  --shadow-lg:0 8px 24px rgba(0,0,0,0.16);
+}
+
+body{
+  background:linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  min-height:100vh;
+  margin:0;
+  padding:20px;
+  position:relative;
+}
+
+body::before{
+  content:'';
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
+  background:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="%23e31937" opacity="0.03"/><circle cx="75" cy="75" r="1" fill="%23003d7a" opacity="0.03"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>') repeat;
+  pointer-events:none;
+  z-index:0;
+}
+
+.header{
+  background:var(--gradient-card);
+  border-bottom:3px solid var(--telkom-primary);
+  padding:20px 30px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-radius:16px;
+  box-shadow:var(--shadow-md);
+  position:relative;
+  z-index:1;
+  backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,0.2);
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+
+.brand img{
+  height:50px;
+  border-radius:8px;
+  box-shadow:var(--shadow-sm);
+}
+
+.telkom{
+  color:var(--telkom-primary);
+  font-weight:700;
+}
+
+.card-profile{
+  background:var(--gradient-card);
+  border-radius:16px;
+  padding:30px;
+  box-shadow:var(--shadow-md);
+  border:1px solid rgba(255,255,255,0.2);
+  position:relative;
+  z-index:1;
+  transition:transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-profile:hover{
+  transform:translateY(-2px);
+  box-shadow:var(--shadow-lg);
+}
+
+.avatar{
+  width:100px;
+  height:100px;
+  border-radius:50%;
+  object-fit:cover;
+  border:4px solid var(--telkom-primary);
+  box-shadow:var(--shadow-md);
+}
+
+.stat-card{
+  background:var(--gradient-card);
+  border-radius:16px;
+  padding:25px;
+  box-shadow:var(--shadow-md);
+  border:1px solid rgba(255,255,255,0.2);
+  position:relative;
+  z-index:1;
+  transition:all 0.3s ease;
+  border-left:4px solid var(--telkom-primary);
+}
+
+.stat-card:hover{
+  transform:translateY(-2px);
+  box-shadow:var(--shadow-lg);
+  border-left-color:var(--telkom-accent);
+}
+
+.stat-card h4{
+  color:var(--telkom-secondary);
+  font-weight:600;
+  margin-bottom:15px;
+}
+
+.stat-card .badge{
+  background:var(--gradient-telkom);
+  color:white;
+  padding:8px 16px;
+  border-radius:20px;
+  font-weight:500;
+  font-size:14px;
+}
+
+.small-muted{
+  font-size:13px;
+  color:var(--telkom-gray);
+  background:rgba(255,255,255,0.8);
+  padding:8px 12px;
+  border-radius:8px;
+  border-left:3px solid var(--telkom-warning);
+}
+
+.upload-preview{
+  max-width:120px;
+  max-height:120px;
+  object-fit:cover;
+  border-radius:12px;
+  box-shadow:var(--shadow-md);
+  border:2px solid var(--telkom-primary);
+}
+
+.table-scroll{
+  max-height:420px;
+  overflow:auto;
+  border-radius:12px;
+  box-shadow:var(--shadow-sm);
+}
+
+.badge-telkom{
+  background:var(--gradient-telkom);
+  color:#fff;
+  padding:6px 14px;
+  border-radius:20px;
+  font-weight:500;
+  font-size:12px;
+  box-shadow:var(--shadow-sm);
+}
+
+.btn-telkom{
+  background:var(--gradient-telkom);
+  color:white;
+  border:none;
+  padding:12px 24px;
+  border-radius:8px;
+  font-weight:600;
+  transition:all 0.3s ease;
+  box-shadow:var(--shadow-sm);
+  position:relative;
+  overflow:hidden;
+}
+
+.btn-telkom::before{
+  content:'';
+  position:absolute;
+  top:0;
+  left:-100%;
+  width:100%;
+  height:100%;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition:left 0.5s ease;
+}
+
+.btn-telkom:hover{
+  transform:translateY(-2px);
+  box-shadow:var(--shadow-md);
+  color:white;
+}
+
+.btn-telkom:hover::before{
+  left:100%;
+}
+
+.form-control{
+  border:2px solid #e9ecef;
+  border-radius:8px;
+  padding:12px 16px;
+  transition:all 0.3s ease;
+  background:rgba(255,255,255,0.9);
+}
+
+.form-control:focus{
+  border-color:var(--telkom-primary);
+  box-shadow:0 0 0 0.2rem rgba(227,25,55,0.25);
+  background:white;
+}
+
+.alert{
+  border-radius:12px;
+  border:none;
+  padding:16px 20px;
+  box-shadow:var(--shadow-sm);
+  position:relative;
+  z-index:1;
+}
+
+.alert-success{
+  background:linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  color:#155724;
+  border-left:4px solid var(--telkom-success);
+}
+
+.alert-danger{
+  background:linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+  color:#721c24;
+  border-left:4px solid var(--telkom-danger);
+}
+
+.container{
+  max-width:1200px;
+  margin:0 auto;
+  position:relative;
+  z-index:1;
+}
+
+.row{
+  margin-bottom:30px;
+}
+
+h3, h4, h5{
+  color:var(--telkom-secondary);
+  font-weight:700;
+}
+
+@keyframes fadeInUp{
+  from{
+    opacity:0;
+    transform:translateY(20px);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+.card-profile, .stat-card{
+  animation:fadeInUp 0.6s ease-out;
+}
+
+.stat-card:nth-child(2){
+  animation-delay:0.1s;
+}
+
+.stat-card:nth-child(3){
+  animation-delay:0.2s;
+}
+
+hr{
+  border:0;
+  height:2px;
+  background:var(--gradient-telkom);
+  border-radius:2px;
+  margin:30px 0;
+}
+
+.btn-outline-primary, .btn-outline-warning{
+  border-width:2px;
+  font-weight:600;
+  transition:all 0.3s ease;
+}
+
+.btn-outline-primary:hover{
+  background:var(--telkom-primary);
+  border-color:var(--telkom-primary);
+  transform:translateY(-2px);
+  box-shadow:var(--shadow-sm);
+}
+
+.btn-outline-warning:hover{
+  background:var(--telkom-warning);
+  border-color:var(--telkom-warning);
+  transform:translateY(-2px);
+  box-shadow:var(--shadow-sm);
+}
 </style>
 </head>
 <body>
 
 <!-- HEADER -->
-<div class="header mb-3">
+<div class="header mb-4">
   <div class="brand">
     <img src="telkom2.png" alt="Telkom" onerror="this.style.display='none'">
     <div>
-      <div style="font-weight:700;color:#111">Sistem Presensi Magang <span class="small-muted">- Dashboard User</span></div>
-      <div class="small-muted">Halo, <?= esc($nama); ?> (<?= esc($nik); ?>) — <?= esc($user['asal_sekolah'] ?? '') ?></div>
+      <div style="font-weight:700;color:var(--telkom-secondary);font-size:18px;">
+        <i class="fas fa-clock"></i> Sistem Presensi Magang 
+        <span class="badge-telkom ms-2">Dashboard User</span>
+      </div>
+      <div class="small-muted mt-1">
+        <i class="fas fa-user"></i> Halo, <?= esc($nama); ?> (<?= esc($nik); ?>) — 
+        <i class="fas fa-school"></i> <?= esc($user['asal_sekolah'] ?? '') ?>
+      </div>
     </div>
   </div>
 
   <div style="display:flex;gap:12px;align-items:center">
-    <div id="datetime" class="small-muted text-end"></div>
-    <a href="riwayat_absen.php" class="btn btn-outline-danger btn-sm">Riwayat</a>
-    <a href="logout.php" class="btn btn-outline-danger btn-sm">Logout</a>
+    <div id="datetime" class="small-muted text-end" style="background:rgba(255,255,255,0.8);padding:8px 12px;border-radius:8px;border-left:3px solid var(--telkom-primary);">
+      <i class="fas fa-calendar-alt"></i> <span id="date"></span><br>
+      <i class="fas fa-clock"></i> <span id="time"></span>
+    </div>
+    <a href="riwayat_absen.php" class="btn btn-outline-primary btn-sm">
+      <i class="fas fa-history"></i> Riwayat
+    </a>
+    <a href="logout.php" class="btn btn-outline-danger btn-sm">
+      <i class="fas fa-sign-out-alt"></i> Logout
+    </a>
   </div>
 </div>
 
@@ -297,10 +624,10 @@ body{background:#f4f6f9;font-family:Inter,Arial,Helvetica,sans-serif}
         <h5>Status Absensi Hari Ini</h5>
 
         <?php if ($err): ?>
-          <div class="alert alert-danger"><?= esc($err) ?></div>
+          <div class="alert alert-danger" id="errorMessage"><?= esc($err) ?></div>
         <?php endif; ?>
         <?php if ($msg): ?>
-          <div class="alert alert-success"><?= esc($msg) ?></div>
+          <div class="alert alert-success" id="successMessage"><?= esc($msg) ?></div>
         <?php endif; ?>
 
         <?php if (!$absenHariIni): ?>
@@ -343,7 +670,7 @@ body{background:#f4f6f9;font-family:Inter,Arial,Helvetica,sans-serif}
               <button type="button" class="btn btn-outline-primary" onclick="submitAbsen('izin')">Kirim Izin</button>
               <button type="button" class="btn btn-outline-warning" onclick="submitAbsen('sakit')">Kirim Sakit</button>
             </div>
-            <div class="small-muted mt-2">Catatan: Absen masuk: jam 08.00–09.00 (lebih dari 09.00 = Telat)</div>
+            <div class="small-muted mt-2">Catatan: Absen masuk hanya bisa dilakukan jam 08.00-08.15</div>
           </form>
 
         <?php else: ?>
@@ -379,9 +706,15 @@ body{background:#f4f6f9;font-family:Inter,Arial,Helvetica,sans-serif}
               <input type="hidden" name="action" value="pulang">
               <input type="hidden" name="latitude" id="latitude_pulang">
               <input type="hidden" name="longitude" id="longitude_pulang">
+              
+              <div class="mb-3">
+                <label class="form-label">Catatan/Alasan (jika pulang setelah 16:30)</label>
+                <textarea name="keterangan_pulang" class="form-control" rows="2" placeholder="Contoh: Lembur mengerjakan data pegawai, rapat tambahan, dll."></textarea>
+              </div>
+              
               <button type="button" class="btn btn-telkom" onclick="submitPulang()">Kirim Absen Pulang</button>
             </form>
-            <div class="small-muted mt-2">Absen pulang akan menambahkan jam pulang pada record hari ini.</div>
+            <div class="small-muted mt-2">Absen pulang hanya bisa dilakukan mulai pukul 16.30. Jika lewat dari jam 16.30, wajib mengisi catatan/alasan.</div>
           <?php else: ?>
             <div class="alert alert-success">Terima kasih, kamu sudah absen pulang hari ini.</div>
           <?php endif; ?>
@@ -456,13 +789,57 @@ body{background:#f4f6f9;font-family:Inter,Arial,Helvetica,sans-serif}
 <script>
 // show live datetime
 function updateDateTime(){
-  const el = document.getElementById('datetime');
+  const dateEl = document.getElementById('date');
+  const timeEl = document.getElementById('time');
   const now = new Date();
   const opt = { weekday:'long', day:'2-digit', month:'long', year:'numeric' };
-  if (el) el.innerHTML = now.toLocaleDateString('id-ID', opt) + '<br><small>' + now.toLocaleTimeString('id-ID') + '</small>';
+  const timeOpt = { hour:'2-digit', minute:'2-digit', second:'2-digit' };
+  
+  if (dateEl) dateEl.innerHTML = now.toLocaleDateString('id-ID', opt);
+  if (timeEl) timeEl.innerHTML = now.toLocaleTimeString('id-ID', timeOpt);
 }
 setInterval(updateDateTime,1000);
 updateDateTime();
+
+// auto-hide success message
+function autoHideSuccessMessage() {
+  const successMsg = document.getElementById('successMessage');
+  if (successMsg) {
+    setTimeout(() => {
+      successMsg.style.transition = 'opacity 0.5s';
+      successMsg.style.opacity = '0';
+      setTimeout(() => {
+        successMsg.remove();
+        // refresh page to reset form after absen pulang
+        if (successMsg.textContent.includes('pulang tercatat')) {
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
+        }
+      }, 500);
+    }, 3000);
+  }
+}
+
+// auto-hide error message
+function autoHideErrorMessage() {
+  const errorMsg = document.getElementById('errorMessage');
+  if (errorMsg) {
+    setTimeout(() => {
+      errorMsg.style.transition = 'opacity 0.5s';
+      errorMsg.style.opacity = '0';
+      setTimeout(() => {
+        errorMsg.remove();
+      }, 500);
+    }, 3000);
+  }
+}
+
+// run auto-hide when page loads
+document.addEventListener('DOMContentLoaded', function() {
+  autoHideSuccessMessage();
+  autoHideErrorMessage();
+});
 
 // geolocation helpers
 function setLatLonInputs(lat, lon){
@@ -476,19 +853,25 @@ function setLatLonInputs(lat, lon){
   if(lonP) lonP.value = lon;
 }
 
-// request location and callback
-function requestLocation(cb){
-  if (!navigator.geolocation) { alert('Browser tidak mendukung Geolocation.'); cb(false); return; }
-  navigator.geolocation.getCurrentPosition(function(pos){
-    setLatLonInputs(pos.coords.latitude, pos.coords.longitude);
-    cb(true);
-  }, function(err){
-    alert('Gagal mendapatkan lokasi. Pastikan izin lokasi diizinkan.');
-    cb(false);
-  }, { enableHighAccuracy: true, timeout: 10000 });
+function requestLocation(callback){
+  if (!navigator.geolocation) {
+    alert('Geolocation tidak didukung browser ini.');
+    callback(false);
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    function(pos){
+      setLatLonInputs(pos.coords.latitude, pos.coords.longitude);
+      callback(true);
+    },
+    function(err){
+      alert('Gagal mendapatkan lokasi. Pastikan GPS aktif dan izinkan akses lokasi.');
+      callback(false);
+    },
+    {timeout:15000, enableHighAccuracy:true}
+  );
 }
 
-// submit absen (masuk/izin/sakit)
 function submitAbsen(action){
   requestLocation(function(ok){
     if (!ok) return;

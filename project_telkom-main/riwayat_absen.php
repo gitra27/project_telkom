@@ -10,7 +10,11 @@ if (!isset($_SESSION['nik'])) {
 $nik  = $_SESSION['nik'];
 $nama = $_SESSION['nama'];
 
-$q = mysqli_query($conn, "SELECT * FROM tb_absensi WHERE nik='$nik' ORDER BY tanggal DESC, jam_masuk DESC");
+// Prevent SQL injection with prepared statements
+$stmt = mysqli_prepare($conn, "SELECT * FROM tb_absensi WHERE nik = ? ORDER BY tanggal DESC, jam_masuk DESC");
+mysqli_stmt_bind_param($stmt, "s", $nik);
+mysqli_stmt_execute($stmt);
+$q = mysqli_stmt_get_result($stmt);
 ?>
 
 <!DOCTYPE html>

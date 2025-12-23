@@ -40,6 +40,7 @@ $dataAbsensi = mysqli_query($conn, $query);
             background: #303841;
             padding: 20px;
             position: fixed;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
         }
         .sidebar a {
             color: white;
@@ -65,9 +66,8 @@ $dataAbsensi = mysqli_query($conn, $query);
     <!-- SIDEBAR -->
     <div class="sidebar">
         <h4 class="text-white mb-4">SUPERADMIN</h4>
-
         <a href="dashboard_superadmin.php">📊 Dashboard</a>
-        <a href="tambah_user.php">➕ Tambah User</a>
+        <a href="tambahuser.php">➕ Tambah User</a>
         <a href="data_user.php">👥 Data User</a>
         <a href="riwayat_absen.php">📜 Riwayat Absen</a>
     </div>
