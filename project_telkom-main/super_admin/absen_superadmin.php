@@ -17,7 +17,7 @@ $ada = $cek->fetch_assoc();
 
 if ($aksi == "masuk") {
     if ($ada) {
-        header("Location: dashboard.php?err=sudah_absen_masuk");
+        header("Location: dashboard_superadmin.php?err=sudah_absen_masuk");
         exit;
     }
 
@@ -30,12 +30,12 @@ if ($aksi == "masuk") {
 } elseif ($aksi == "pulang") {
 
     if (!$ada) {
-        header("Location: dashboard.php?err=belum_absen_masuk");
+        header("Location: dashboard_superadmin.php?err=belum_absen_masuk");
         exit;
     }
 
     if ($ada['jam_pulang'] != null) {
-        header("Location: dashboard.php?err=sudah_absen_pulang");
+        header("Location: dashboard_superadmin.php?err=sudah_absen_pulang");
         exit;
     }
 
@@ -45,6 +45,6 @@ if ($aksi == "masuk") {
 }
 
 // Redirect user kembali ke dashboard
-header("Location: dashboard.php?success=1");
+header("Location: dashboard_superadmin.php?success=1");
 exit;
 ?>

@@ -1,16 +1,21 @@
 <?php
 include "config.php";
-session_start();
+// session_start() sudah dipanggil di config.php, jadi tidak perlu dipanggil lagi
 if(!isset($_SESSION['nik'])){ header("Location: login.php"); exit; }
+
+// Fungsi esc() untuk escape HTML
+function esc($string) {
+    return htmlspecialchars($string ?? '', ENT_QUOTES, 'UTF-8');
+}
 
 $nik = $_SESSION['nik'];
 $today = date('Y-m-d');
 
-<<<<<<< HEAD
 // fetch user
 $uq = mysqli_query($conn, "SELECT * FROM tb_karyawan WHERE nik='".esc($nik)."' LIMIT 1");
 $user = $uq && mysqli_num_rows($uq) ? mysqli_fetch_assoc($uq) : null;
 $lantai = $user['lantai'] ?? '';
+$nama = $user['nama'] ?? '';
 
 // Messages
 $msg = '';
@@ -62,68 +67,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // ACTIONS
         if ($action === 'masuk') {
-            // Validasi waktu absen masuk (08:00 - 08:15)
-            $current_time = time();
-            $start_time = strtotime(date('Y-m-d').' 08:00:00');
-            $end_time = strtotime(date('Y-m-d').' 08:15:00');
+            // Tidak ada validasi waktu - absen bisa dilakukan kapan saja
+            $time_now = date('H:i:s');
             
-            if ($current_time < $start_time) {
-                $err = "Absen masuk hanya bisa dilakukan mulai pukul 08:00.";
-            } elseif ($current_time > $end_time) {
-                $err = "Absen masuk sudah ditutup. Paling lambat pukul 08:15.";
+            // location required
+            if ($lat === '' || $lon === '') { 
+                $err = "Lokasi wajib untuk absen masuk."; 
             } else {
-                // location required
-                if ($lat === '' || $lon === '') { 
-                    $err = "Lokasi wajib untuk absen masuk."; 
-                } else {
-                    // determine status: 08:00-08:15 = Hadir (tidak ada telat)
-                    $status = 'Hadir';
-                    
-                    if ($exists) {
-                        // update if jam_masuk empty
-                        if (empty($row['jam_masuk'])) {
-                            $sql = "UPDATE tb_absensi SET jam_masuk='$time_now', status='".esc($status)."' WHERE id_absen='".$row['id_absen']."'";
-                            mysqli_query($conn, $sql);
-                            $msg = "Absen masuk tercatat. Status: $status";
-                        } else {
-                            $err = "Absen masuk sudah tercatat hari ini.";
-                        }
-                    } else {
-                        $sql = "INSERT INTO tb_absensi (nik,tanggal,jam_masuk,status) VALUES ('".esc($nik)."','$today','$time_now','".esc($status)."')";
+                // Status selalu Hadir
+                $status = 'Hadir';
+                
+                if ($exists) {
+                    // update if jam_masuk empty
+                    if (empty($row['jam_masuk'])) {
+                        $sql = "UPDATE tb_absensi SET jam_masuk='$time_now', status='".esc($status)."', foto='$uploaded_foto', file_upload='$uploaded_file', catatan='$catatan', maps_url='$maps_url' WHERE id_absen='".$row['id_absen']."'";
                         mysqli_query($conn, $sql);
                         $msg = "Absen masuk tercatat. Status: $status";
+                    } else {
+                        // Notifikasi jika sudah absen masuk
+                        $err = "Anda sudah melakukan absen masuk hari ini pada pukul " . $row['jam_masuk'] . ". Tidak bisa absen masuk lagi.";
                     }
+                } else {
+                    // insert new record
+                    $sql = "INSERT INTO tb_absensi (nik, tanggal, jam_masuk, status, foto, file_upload, catatan, maps_url) VALUES ('".esc($nik)."','$today','$time_now','".esc($status)."','$uploaded_foto','$uploaded_file','$catatan','$maps_url')";
+                    mysqli_query($conn, $sql);
+                    $msg = "Absen masuk tercatat. Status: $status";
                 }
             }
         }
 
         elseif ($action === 'pulang') {
+            $time_now = date('H:i:s');
             if (!$exists) $err = "Belum ada record absen masuk hari ini.";
             else {
                 if (!empty($row['jam_pulang'])) $err = "Absen pulang sudah tercatat.";
                 else {
-                    // Validasi waktu absen pulang (mulai 16:30)
-                    $current_time = time();
-                    $pulang_time = strtotime(date('Y-m-d').' 16:30:00');
-                    
-                    if ($current_time < $pulang_time) {
-                        $err = "Absen pulang hanya bisa dilakukan mulai pukul 16:30.";
+                    // Tidak ada validasi waktu - absen pulang bisa dilakukan kapan saja
+                    if ($lat === '' || $lon === '') { 
+                        $err = "Lokasi wajib untuk absen pulang."; 
                     } else {
-                        if ($lat === '' || $lon === '') { 
-                            $err = "Lokasi wajib untuk absen pulang."; 
-                        } else {
-                            // Cek apakah ada catatan keterlambatan
-                            $keterangan = $_POST['keterangan_pulang'] ?? '';
-                            if ($current_time > $pulang_time && empty($keterangan)) {
-                                $err = "Wajib mengisi catatan/alasan karena pulang setelah jam 16:30.";
-                            } else {
-                                $sql = "UPDATE tb_absensi SET jam_pulang='$time_now', status='Selesai' WHERE id_absen='".$row['id_absen']."'";
-                                mysqli_query($conn, $sql);
-                                $msg = "Absen pulang tercatat. Terima kasih.";
-                                // Refresh halaman untuk menampilkan form absen pagi kembali
-                                echo "<script>setTimeout(function(){ window.location.reload(); }, 2000);</script>";
-                            }
-                        }
+                        // Catatan opsional
+                        $keterangan = $_POST['keterangan_pulang'] ?? '';
+                        $sql = "UPDATE tb_absensi SET jam_pulang='$time_now', status='Selesai', maps_url='$maps_url', catatan=COALESCE('$keterangan', catatan) WHERE id_absen='".$row['id_absen']."'";
+                        mysqli_query($conn, $sql);
+                        $msg = "Absen pulang tercatat. Terima kasih.";
+                        // Refresh halaman untuk menampilkan form absen pagi kembali
+                        echo "<script>setTimeout(function(){ window.location.reload(); }, 2000);</script>";
                     }
                 }
             }
@@ -136,9 +125,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $status = ($action === 'izin') ? 'Izin' : 'Sakit';
                 if ($exists) {
-                    mysqli_query($conn, "UPDATE tb_absensi SET jam_masuk=NULL, jam_pulang=NULL, status='".esc($status)."' WHERE id_absen='".$row['id_absen']."'");
+                    mysqli_query($conn, "UPDATE tb_absensi SET jam_masuk=NULL, jam_pulang=NULL, status='".esc($status)."', file_upload='$uploaded_file', catatan='$catatan' WHERE id_absen='".$row['id_absen']."'");
                 } else {
-                    mysqli_query($conn, "INSERT INTO tb_absensi (nik,tanggal,status) VALUES ('".esc($nik)."','$today','".esc($status)."')");
+                    mysqli_query($conn, "INSERT INTO tb_absensi (nik,tanggal,status,file_upload,catatan) VALUES ('".esc($nik)."','$today','".esc($status)."','$uploaded_file','$catatan')");
                 }
                 $msg = "Status $status tercatat untuk hari ini.";
             }
@@ -147,11 +136,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         elseif ($action === 'save_note') {
             // save or update note
             if ($exists) {
-                mysqli_query($conn, "UPDATE tb_absensi SET status='Catatan Disimpan' WHERE id_absen='".$row['id_absen']."'");
+                mysqli_query($conn, "UPDATE tb_absensi SET catatan='$catatan' WHERE id_absen='".$row['id_absen']."'");
             } else {
-                mysqli_query($conn, "INSERT INTO tb_absensi (nik,tanggal,status) VALUES ('".esc($nik)."','$today','Belum Absen')");
+                mysqli_query($conn, "INSERT INTO tb_absensi (nik,tanggal,status,catatan) VALUES ('".esc($nik)."','$today','Belum Absen','$catatan')");
             }
             $msg = "Catatan disimpan.";
+        }
+
+        elseif ($action === 'upload_profile') {
+            // Handle profile photo upload
+            if (isset($_FILES['profile_photo']) && $_FILES['profile_photo']['error'] === UPLOAD_ERR_OK) {
+                $file = $_FILES['profile_photo'];
+                $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
+                $max_size = 2 * 1024 * 1024; // 2MB
+                
+                // Validate file type
+                if (!in_array($file['type'], $allowed_types)) {
+                    $err = "Hanya file JPEG, PNG, atau GIF yang diperbolehkan.";
+                }
+                // Validate file size
+                elseif ($file['size'] > $max_size) {
+                    $err = "Ukuran file maksimal 2MB.";
+                }
+                else {
+                    // Create uploads directory if it doesn't exist
+                    $upload_dir = __DIR__ . '/uploads/profile/';
+                    if (!file_exists($upload_dir)) {
+                        mkdir($upload_dir, 0755, true);
+                    }
+                    
+                    // Generate unique filename
+                    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+                    $filename = 'profile_' . $nik . '_' . time() . '.' . $ext;
+                    $target_path = $upload_dir . $filename;
+                    
+                    // Move uploaded file
+                    if (move_uploaded_file($file['tmp_name'], $target_path)) {
+                        // Update database with new photo path
+                        $photo_path = 'uploads/profile/' . $filename;
+                        $update_sql = "UPDATE tb_karyawan SET photo_path = '".esc($photo_path)."' WHERE nik = '".esc($nik)."'";
+                        
+                        if (mysqli_query($conn, $update_sql)) {
+                            // Update user data for display
+                            $user['photo_path'] = $photo_path;
+                            $msg = "Foto profil berhasil diperbarui!";
+                            
+                            // Refresh user data
+                            $uq = mysqli_query($conn, "SELECT * FROM tb_karyawan WHERE nik='".esc($nik)."' LIMIT 1");
+                            $user = $uq && mysqli_num_rows($uq) ? mysqli_fetch_assoc($uq) : null;
+                            
+                            // Add JavaScript to update avatar without page reload
+                            echo "<script>updateProfileAvatar('".esc($photo_path)."'); document.getElementById('photoPreview').innerHTML = '';</script>";
+                        } else {
+                            $err = "Gagal menyimpan foto ke database.";
+                            // Remove uploaded file if database update failed
+                            unlink($target_path);
+                        }
+                    } else {
+                        $err = "Gagal mengupload file.";
+                    }
+                }
+            } else {
+                $err = "Tidak ada file yang diupload atau terjadi kesalahan.";
+            }
         }
 
         // refresh $absenHariIni after processing
@@ -183,16 +230,11 @@ if ($lantai) {
 $history = [];
 $hq = mysqli_query($conn, "SELECT * FROM tb_absensi WHERE nik='".esc($nik)."' ORDER BY tanggal DESC, jam_masuk DESC LIMIT 30");
 if ($hq) while($r = mysqli_fetch_assoc($hq)) $history[] = $r;
-=======
-$q = mysqli_query($conn,"SELECT * FROM tb_absensi WHERE nik='$nik' AND tanggal='$today' LIMIT 1");
-$absen = mysqli_fetch_assoc($q);
->>>>>>> 98a212276442d24e4f40741774f110e9a4853433
 ?>
 <!doctype html>
 <html lang="id">
 <head>
 <meta charset="utf-8">
-<<<<<<< HEAD
 <title>Dashboard Presensi - <?= esc($nama) ?></title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -495,35 +537,33 @@ hr{
   border-color:var(--telkom-warning);
   transform:translateY(-2px);
   box-shadow:var(--shadow-sm);
-=======
-<title>Dashboard Presensi</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<link href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet">
-
-<style>
-.page-body{background:#f5f7fb}
-
-/* WARNA KHAS TELKOM */
-.btn-telkom{
-  background:#E11C2A;
-  border:none;
-  color:#fff;
 }
-.btn-telkom:hover{
-  background:#c91622;
-  color:#fff;
+
+/* Custom styles for 7 hari terakhir */
+.list-group-item {
+  border-left: none !important;
+  border-right: none !important;
+  transition: all 0.3s ease;
 }
-.btn-disabled{
-  background:#adb5bd !important;
-  color:#fff !important;
-  cursor:not-allowed;
->>>>>>> 98a212276442d24e4f40741774f110e9a4853433
+
+.list-group-item:hover {
+  background-color: rgba(227, 25, 55, 0.05);
+  transform: translateX(5px);
 }
+
+.list-group-item .border-start {
+  transition: all 0.3s ease;
+}
+
+.list-group-item:hover .border-start {
+  border-color: var(--telkom-primary) !important;
+}
+
 </style>
 </head>
 
-<<<<<<< HEAD
+<body>
+
 <!-- HEADER -->
 <div class="header mb-4">
   <div class="brand">
@@ -537,118 +577,8 @@ hr{
         <i class="fas fa-user"></i> Halo, <?= esc($nama); ?> (<?= esc($nik); ?>) — 
         <i class="fas fa-school"></i> <?= esc($user['asal_sekolah'] ?? '') ?>
       </div>
-=======
-<body>
-<div class="page">
-
-<!-- NAVBAR -->
-<header class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
-  <div class="container-xl">
-    <span class="navbar-brand fw-bold text-danger">Dashboard Presensi</span>
-    <div class="navbar-nav ms-auto">
-      <a class="nav-link active" href="#">Home</a>
-      <a class="nav-link" href="rekap.php">Rekap Presensi</a>
-      <a class="nav-link" href="ketidakhadiran.php">Ketidakhadiran</a>
-      <a class="nav-link text-danger" href="logout.php">Logout</a>
->>>>>>> 98a212276442d24e4f40741774f110e9a4853433
     </div>
   </div>
-</header>
-
-<!-- CONTENT -->
-<div class="page-body">
-  <div class="container-xl">
-
-    <h2 class="mb-4">Dashboard</h2>
-
-    <div class="row row-cards">
-
-      <!-- PRESENSI MASUK -->
-      <div class="col-md-6">
-        <div class="card text-center">
-          <div class="card-body">
-            <div class="text-muted">Presensi Masuk</div>
-            <h4 class="mt-2"><?=date('d F Y')?></h4>
-            <h1 class="my-3 fw-bold" id="jamMasuk"></h1>
-
-            <form action="proses_absenmasuk.php" method="POST">
-              <button
-                class="btn <?= $absen ? 'btn-disabled' : 'btn-telkom' ?>"
-                <?=($absen?'disabled':'')?>>
-                Masuk
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      <!-- PRESENSI KELUAR -->
-      <div class="col-md-6">
-        <div class="card text-center">
-          <div class="card-body">
-            <div class="text-muted">Presensi Keluar</div>
-            <h4 class="mt-2"><?=date('d F Y')?></h4>
-            <h1 class="my-3 fw-bold" id="jamKeluar"></h1>
-
-            <form action="proses_absenkeluar.php" method="POST">
-              <button
-                class="btn <?= (!$absen || $absen['jam_pulang']) ? 'btn-disabled' : 'btn-telkom' ?>"
-                <?=(!$absen || $absen['jam_pulang']?'disabled':'')?>>
-                Keluar
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- RIWAYAT ABSENSI -->
-    <div class="card mt-4">
-      <div class="card-header">
-        <h3 class="card-title">Riwayat Absensi</h3>
-      </div>
-
-      <div class="table-responsive">
-        <table class="table card-table table-vcenter">
-          <thead>
-            <tr>
-              <th>Tanggal</th>
-              <th>Masuk</th>
-              <th>Pulang</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-          <?php
-          $riwayat = mysqli_query($conn,"
-            SELECT * FROM tb_absensi
-            WHERE nik='$nik'
-            ORDER BY tanggal DESC
-          ");
-          while($r=mysqli_fetch_assoc($riwayat)):
-          ?>
-            <tr>
-              <td><?=date('d-m-Y',strtotime($r['tanggal']))?></td>
-              <td><?=$r['jam_masuk'] ?: '-'?></td>
-              <td><?=$r['jam_pulang'] ?: '-'?></td>
-              <td>
-                <span class="badge
-                  <?=($r['status']=='Hadir'?'bg-success':
-                     ($r['status']=='Telat'?'bg-warning':
-                     ($r['status']=='Sakit'?'bg-info':
-                     ($r['status']=='Izin'?'bg-primary':'bg-secondary'))))?>">
-                  <?=$r['status']?>
-                </span>
-              </td>
-            </tr>
-          <?php endwhile; ?>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-<<<<<<< HEAD
   <div style="display:flex;gap:12px;align-items:center">
     <div id="datetime" class="small-muted text-end" style="background:rgba(255,255,255,0.8);padding:8px 12px;border-radius:8px;border-left:3px solid var(--telkom-primary);">
       <i class="fas fa-calendar-alt"></i> <span id="date"></span><br>
@@ -669,7 +599,7 @@ hr{
     <div class="col-lg-4">
       <div class="card p-3 mb-3 card-profile">
         <div class="d-flex gap-3 align-items-center">
-          <img src="<?= esc($user['photo_path'] ?? 'https://via.placeholder.com/80') ?>" alt="avatar" class="avatar">
+          <img src="<?= !empty($user['photo_path']) && file_exists($user['photo_path']) ? esc($user['photo_path']) : 'uploads/profile/default_avatar.png' ?>" alt="avatar" class="avatar" id="profileAvatar">
           <div>
             <h5 class="mb-0 telkom"><?= esc($user['nama'] ?? $nama) ?></h5>
             <div class="small-muted"><?= esc($user['divisi'] ?? '') ?></div>
@@ -690,7 +620,11 @@ hr{
         <form method="POST" enctype="multipart/form-data" class="mb-2">
           <input type="hidden" name="action" value="upload_profile">
           <label class="form-label small-muted">Ubah Foto Profil</label>
-          <input type="file" name="profile_photo" accept="image/*" class="form-control form-control-sm mb-2">
+          <input type="file" name="profile_photo" accept="image/*" class="form-control form-control-sm mb-2" onchange="previewProfilePhoto(this)">
+          <button type="submit" class="btn btn-telkom btn-sm w-100">
+            <i class="fas fa-upload me-2"></i>Upload Foto
+          </button>
+          <div id="photoPreview" class="mt-2 text-center"></div>
         </form>
 
       </div>
@@ -714,24 +648,35 @@ hr{
 
       <!-- 7 hari terakhir -->
       <div class="card p-3">
-        <h6>7 Hari Terakhir</h6>
-        <ul class="list-group list-group-flush">
+        <h6 class="mb-3">7 Hari Terakhir</h6>
+        <div class="list-group list-group-flush">
           <?php
           $sevenQ = mysqli_query($conn, "SELECT tanggal,status,jam_masuk,jam_pulang FROM tb_absensi WHERE nik='".esc($nik)."' ORDER BY tanggal DESC LIMIT 7");
           if ($sevenQ && mysqli_num_rows($sevenQ) > 0):
             while($s = mysqli_fetch_assoc($sevenQ)):
+              $status_color = ($s['status'] == 'Hadir') ? 'text-success' : 
+                            ($s['status'] == 'Telat' ? 'text-warning' : 
+                            ($s['status'] == 'Izin' ? 'text-primary' : 
+                            ($s['status'] == 'Sakit' ? 'text-warning' : 'text-secondary')));
           ?>
-            <li class="list-group-item d-flex justify-content-between">
-              <div>
-                <strong><?= date("d M", strtotime($s['tanggal'])); ?></strong><br>
-                <small class="small-muted"><?= $s['status'] ?: 'Belum Absen' ?></small>
+            <div class="list-group-item d-flex justify-content-between align-items-center px-0 border-start border-0 ps-3">
+              <div class="d-flex align-items-center">
+                <div class="border-start border-3 border-warning me-3" style="height: 40px;"></div>
+                <div>
+                  <div class="fw-bold"><?= date("d M", strtotime($s['tanggal'])); ?></div>
+                  <small class="<?= $status_color ?>"><?= $s['status'] ?: 'Belum Absen' ?></small>
+                </div>
               </div>
-              <div class="small-muted"><?= ($s['jam_masuk'] ?: '-') ?></div>
-            </li>
+              <div class="text-end">
+                <small class="text-muted"><?= ($s['jam_masuk'] ?: '-') ?></small>
+              </div>
+            </div>
           <?php endwhile; else: ?>
-            <li class="list-group-item">Belum ada data.</li>
+            <div class="list-group-item text-center text-muted py-3">
+              <i class="fas fa-calendar-times me-2"></i>Belum ada riwayat absensi
+            </div>
           <?php endif; ?>
-        </ul>
+        </div>
       </div>
 
     </div>
@@ -1003,26 +948,35 @@ function submitAbsen(action){
   });
 }
 
-// submit pulang
 function submitPulang(){
   requestLocation(function(ok){
     if (!ok) return;
     document.getElementById('formPulang').submit();
   });
-=======
-  </div>
-</div>
-
-</div>
-
-<script>
-function updateJam(){
-  const now = new Date().toLocaleTimeString('id-ID');
-  document.getElementById('jamMasuk').innerText = now;
-  document.getElementById('jamKeluar').innerText = now;
->>>>>>> 98a212276442d24e4f40741774f110e9a4853433
 }
-setInterval(updateJam,1000);updateJam();
+
+// preview profile photo
+function previewProfilePhoto(input) {
+  const preview = document.getElementById('photoPreview');
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      preview.innerHTML = '<img src="' + e.target.result + '" class="upload-preview" alt="Preview">';
+    };
+    reader.readAsDataURL(input.files[0]);
+  } else {
+    preview.innerHTML = '';
+  }
+}
+
+// update profile avatar after successful upload
+function updateProfileAvatar(newPhotoPath) {
+  const avatar = document.getElementById('profileAvatar');
+  if (avatar && newPhotoPath) {
+    avatar.src = newPhotoPath + '?t=' + new Date().getTime(); // Add timestamp to prevent caching
+  }
+}
+
 </script>
 
 </body>

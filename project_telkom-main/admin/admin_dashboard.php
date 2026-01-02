@@ -89,7 +89,7 @@ $q_absen = mysqli_query($conn,"
             </a>
             <a href="#" class="menu-item">
                 <i class="fas fa-users"></i>
-                <span>Data Karyawan</span>
+                <span>Data Magang dan PKL</span>
             </a>
             <a href="#" class="menu-item">
                 <i class="fas fa-calendar-check"></i>
@@ -124,7 +124,9 @@ $q_absen = mysqli_query($conn,"
                     <span class="notification-badge">3</span>
                 </button>
                 <div class="user-profile">
-                    <div class="user-avatar">A</div>
+                    <div class="user-avatar">
+                    <img src="../uploads/profile/default_avatar.png" alt="Admin Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                </div>
                     <div class="user-info">
                         <h4>Admin</h4>
                         <p>Lantai <?= htmlspecialchars($lantai_admin) ?></p>
