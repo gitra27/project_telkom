@@ -67,52 +67,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // ACTIONS
         if ($action === 'masuk') {
-            // Tidak ada validasi waktu - absen bisa dilakukan kapan saja
             $time_now = date('H:i:s');
+            $current_hour = date('H');
             
-            // location required
-            if ($lat === '' || $lon === '') { 
-                $err = "Lokasi wajib untuk absen masuk."; 
+            // Validasi jam kerja realistis Indonesia (08:00 - 17:00)
+            if ($current_hour < 8 || $current_hour >= 17) {
+                $err = "Absen masuk hanya bisa dilakukan pada jam kerja (08:00 - 17:00 WIB).";
             } else {
-                // Status selalu Hadir
-                $status = 'Hadir';
-                
-                if ($exists) {
-                    // update if jam_masuk empty
-                    if (empty($row['jam_masuk'])) {
-                        $sql = "UPDATE tb_absensi SET jam_masuk='$time_now', status='".esc($status)."', foto='$uploaded_foto', file_upload='$uploaded_file', catatan='$catatan', maps_url='$maps_url' WHERE id_absen='".$row['id_absen']."'";
+                // location required
+                if ($lat === '' || $lon === '') { 
+                    $err = "Lokasi wajib untuk absen masuk."; 
+                } else {
+                    // Status berdasarkan jam masuk
+                    if ($current_hour == 8 && date('i') <= 15) {
+                        $status = 'Hadir'; // Tepat waktu (08:00-08:15)
+                    } elseif ($current_hour == 8 && date('i') > 15) {
+                        $status = 'Telat'; // Terlambat (08:16-08:59)
+                    } else {
+                        $status = 'Hadir'; // Masuk setelah jam 9 (dianggap hadir)
+                    }
+                    
+                    if ($exists) {
+                        // update if jam_masuk empty
+                        if (empty($row['jam_masuk'])) {
+                            $sql = "UPDATE tb_absensi SET jam_masuk='$time_now', status='".esc($status)."', foto='$uploaded_foto', file_upload='$uploaded_file', catatan='$catatan', maps_url='$maps_url' WHERE id_absen='".$row['id_absen']."'";
+                            mysqli_query($conn, $sql);
+                            $msg = "Absen masuk tercatat. Status: $status";
+                        } else {
+                            // Notifikasi jika sudah absen masuk
+                            $err = "Anda sudah melakukan absen masuk hari ini pada pukul " . $row['jam_masuk'] . ". Tidak bisa absen masuk lagi.";
+                        }
+                    } else {
+                        // insert new record
+                        $sql = "INSERT INTO tb_absensi (nik, tanggal, jam_masuk, status, foto, file_upload, catatan, maps_url) VALUES ('".esc($nik)."','$today','$time_now','".esc($status)."','$uploaded_foto','$uploaded_file','$catatan','$maps_url')";
                         mysqli_query($conn, $sql);
                         $msg = "Absen masuk tercatat. Status: $status";
-                    } else {
-                        // Notifikasi jika sudah absen masuk
-                        $err = "Anda sudah melakukan absen masuk hari ini pada pukul " . $row['jam_masuk'] . ". Tidak bisa absen masuk lagi.";
                     }
-                } else {
-                    // insert new record
-                    $sql = "INSERT INTO tb_absensi (nik, tanggal, jam_masuk, status, foto, file_upload, catatan, maps_url) VALUES ('".esc($nik)."','$today','$time_now','".esc($status)."','$uploaded_foto','$uploaded_file','$catatan','$maps_url')";
-                    mysqli_query($conn, $sql);
-                    $msg = "Absen masuk tercatat. Status: $status";
                 }
             }
         }
 
         elseif ($action === 'pulang') {
             $time_now = date('H:i:s');
+            $current_hour = date('H');
+            $current_minute = date('i');
+            
             if (!$exists) $err = "Belum ada record absen masuk hari ini.";
             else {
                 if (!empty($row['jam_pulang'])) $err = "Absen pulang sudah tercatat.";
                 else {
-                    // Tidak ada validasi waktu - absen pulang bisa dilakukan kapan saja
-                    if ($lat === '' || $lon === '') { 
-                        $err = "Lokasi wajib untuk absen pulang."; 
+                    // Validasi jam kerja realistis Indonesia untuk pulang (16:30 - 18:00)
+                    if ($current_hour < 16 || ($current_hour == 16 && $current_minute < 30)) {
+                        $err = "Absen pulang hanya bisa dilakukan mulai pukul 16:30 WIB.";
+                    } elseif ($current_hour >= 18) {
+                        $err = "Absen pulang hanya bisa dilakukan hingga pukul 18:00 WIB.";
                     } else {
-                        // Catatan opsional
-                        $keterangan = $_POST['keterangan_pulang'] ?? '';
-                        $sql = "UPDATE tb_absensi SET jam_pulang='$time_now', status='Selesai', maps_url='$maps_url', catatan=COALESCE('$keterangan', catatan) WHERE id_absen='".$row['id_absen']."'";
+                        // location required
+                        if ($lat === '' || $lon === '') { 
+                            $err = "Lokasi wajib untuk absen pulang."; 
+                        } else {
+                            // Catatan opsional
+                            $keterangan = $_POST['keterangan_pulang'] ?? '';
+                            // Cek apakah status 'Selesai' ada di enum, jika tidak gunakan 'Hadir'
+                            $check_enum = mysqli_query($conn, "SHOW COLUMNS FROM tb_absensi WHERE Field = 'status' AND Type LIKE '%Selesai%'");
+                            $has_selesai = mysqli_num_rows($check_enum) > 0;
+                            $new_status = $has_selesai ? 'Selesai' : 'Hadir';
+                            $sql = "UPDATE tb_absensi SET jam_pulang='$time_now', status='$new_status', maps_url='$maps_url', catatan=COALESCE('$keterangan', catatan) WHERE id_absen='".$row['id_absen']."'";
+                            mysqli_query($conn, $sql);
+                            $msg = "Absen pulang tercatat. Terima kasih.";
+                        }
+                        $new_status = $has_selesai ? 'Selesai' : 'Hadir';
+                        $sql = "UPDATE tb_absensi SET jam_pulang='$time_now', status='$new_status', maps_url='$maps_url', catatan=COALESCE('$keterangan', catatan) WHERE id_absen='".$row['id_absen']."'";
                         mysqli_query($conn, $sql);
                         $msg = "Absen pulang tercatat. Terima kasih.";
-                        // Refresh halaman untuk menampilkan form absen pagi kembali
-                        echo "<script>setTimeout(function(){ window.location.reload(); }, 2000);</script>";
                     }
                 }
             }
@@ -740,7 +767,31 @@ hr{
           <!-- already have record -->
           <div class="row">
             <div class="col-md-6">
-              <p><strong>Status:</strong> <?= esc($absenHariIni['status'] ?? 'Belum Absen') ?></p>
+              <p><strong>Status:</strong> 
+                <?php
+                  $status = $absenHariIni['status'] ?? 'Belum Absen';
+                  if ($status == 'Hadir') {
+    $cls = 'badge bg-success';
+} elseif ($status == 'Telat') {
+    $cls = 'badge bg-warning text-dark';
+} elseif ($status == 'Izin') {
+    $cls = 'badge bg-primary';
+} elseif ($status == 'Sakit') {
+    $cls = 'badge bg-warning text-dark';
+} elseif ($status == 'Selesai') {
+    $cls = 'badge bg-info';
+} else {
+    $cls = 'badge bg-secondary';
+}
+
+// Jika status Selesai tapi tidak tersimpan di database, tampilkan sebagai Hadir
+if ($status == 'Belum Absen' && !empty($absenHariIni['jam_pulang'])) {
+    $status = 'Selesai';
+    $cls = 'badge bg-info';
+}
+                  echo "<span class='$cls'>".$status."</span>";
+                ?>
+              </p>
               <p><strong>Jam Masuk:</strong> <?= esc($absenHariIni['jam_masuk'] ?? '-') ?></p>
               <p><strong>Jam Pulang:</strong> <?= esc($absenHariIni['jam_pulang'] ?? '-') ?></p>
             </div>
@@ -763,7 +814,7 @@ hr{
 
           <hr>
 
-          <?php if (empty($absenHariIni['jam_pulang'])): ?>
+          <?php if (empty($absenHariIni['jam_pulang']) && $status !== 'Izin' && $status !== 'Sakit'): ?>
             <form method="POST" id="formPulang">
               <input type="hidden" name="nik" value="<?= esc($nik) ?>">
               <input type="hidden" name="action" value="pulang">
@@ -778,6 +829,8 @@ hr{
               <button type="button" class="btn btn-telkom" onclick="submitPulang()">Kirim Absen Pulang</button>
             </form>
             <div class="small-muted mt-2">Absen pulang hanya bisa dilakukan mulai pukul 16.30. Jika lewat dari jam 16.30, wajib mengisi catatan/alasan.</div>
+          <?php elseif ($status === 'Izin' || $status === 'Sakit'): ?>
+            <div class="alert alert-info">Status <?= htmlspecialchars($status) ?> - Tidak perlu absen pulang.</div>
           <?php else: ?>
             <div class="alert alert-success">Terima kasih, kamu sudah absen pulang hari ini.</div>
           <?php endif; ?>

@@ -459,6 +459,10 @@ if (isset($_POST['save'])) {
             <i class="fas fa-users"></i>
             Data User
         </a>
+        <a href="data_admin.php">
+            <i class="fas fa-user-shield"></i>
+            Data Admin
+        </a>
         <a href="riwayat_absen.php">
             <i class="fas fa-history"></i>
             Riwayat Absen
@@ -478,7 +482,7 @@ if (isset($_POST['save'])) {
         <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-title">
-                <i class="fas fa-user-plus-circle"></i>
+                <i class="fas fa-user-plus"></i>
                 Tambah User Baru
             </h1>
             <div class="page-subtitle">

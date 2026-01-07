@@ -1,9 +1,20 @@
 <?php
 include "../config.php";
 
+// CEK SESSION SUPER ADMIN - simple check
+if (!isset($_SESSION['superadmin']) || $_SESSION['superadmin'] !== true) {
+    header("Location: login_superadmin.php");
+    exit();
+}
+
 // CEK apakah tb_karyawan punya kolom nik
 $checkNik = mysqli_query($conn, "SHOW COLUMNS FROM tb_karyawan LIKE 'nik'");
 $hasNik = mysqli_num_rows($checkNik) > 0;
+
+// Generate CSRF Token untuk keamanan
+if (!isset($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
 
 // Query ABSENSI otomatis (join ke tb_karyawan)
 if ($hasNik) {
@@ -34,6 +45,39 @@ $totalHadir = mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_absensi WHER
 $totalIzin = mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_absensi WHERE tanggal = '$today' AND status = 'Izin'")->fetch_assoc()['total'] ?? 0;
 $totalSakit = mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_absensi WHERE tanggal = '$today' AND status = 'Sakit'")->fetch_assoc()['total'] ?? 0;
 $totalUser = mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_karyawan WHERE account_active = 1")->fetch_assoc()['total'] ?? 0;
+
+// CHECK AND NOTIFY USERS WITH EXPIRED INTERNSHIP (LIKE ADMIN BIASA)
+$expired_users = [];
+$expiring_soon = [];
+
+// Simple query for expired users
+$check_expired = mysqli_query($conn, "
+    SELECT id, nik, nama, end_date 
+    FROM tb_karyawan 
+    WHERE end_date < '$today'
+    ORDER BY end_date DESC
+");
+
+if ($check_expired) {
+    while ($user = mysqli_fetch_assoc($check_expired)) {
+        $expired_users[] = $user;
+    }
+}
+
+// Simple query for expiring users (1-2 days)
+$next_two_days = date('Y-m-d', strtotime('+2 days'));
+$check_expiring = mysqli_query($conn, "
+    SELECT id, nik, nama, end_date 
+    FROM tb_karyawan 
+    WHERE end_date BETWEEN '$today' AND '$next_two_days'
+    ORDER BY end_date ASC
+");
+
+if ($check_expiring) {
+    while ($user = mysqli_fetch_assoc($check_expiring)) {
+        $expiring_soon[] = $user;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -41,6 +85,10 @@ $totalUser = mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_karyawan WHER
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com;">
+    <meta name="robots" content="noindex, nofollow">
     <title>Dashboard Super Admin - Sistem Presensi</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -462,10 +510,30 @@ $totalUser = mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_karyawan WHER
             border: none;
         }
 
-        .badge-success { 
-            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); 
-            color: #155724; 
-            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+        /* Reset all badge colors first */
+        .badge {
+            color: inherit !important;
+        }
+        
+        /* Override Bootstrap badge-success with maximum specificity */
+        body table tbody tr td span.badge.badge-success,
+        html body table tbody tr td span.badge.badge-success,
+        .table-container .table tbody tr td span.badge-success,
+        td span.badge-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important; 
+            color: #000000 !important; 
+            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2) !important;
+            border: none !important;
+        }
+        
+        .badge-success, 
+        .badge.badge-success, 
+        .table .badge-success,
+        td .badge-success,
+        span.badge-success { 
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important; 
+            color: #000000 !important; 
+            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2) !important;
         }
         
         .badge-warning { 
@@ -730,6 +798,10 @@ $totalUser = mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_karyawan WHER
             <i class="fas fa-users"></i>
             Data User
         </a>
+        <a href="data_admin.php">
+            <i class="fas fa-user-shield"></i>
+            Data Admin
+        </a>
         <a href="riwayat_absen.php">
             <i class="fas fa-history"></i>
             Riwayat Absen
@@ -791,6 +863,40 @@ $totalUser = mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_karyawan WHER
                 <div class="stat-label">Total User Aktif</div>
             </div>
         </div>
+
+        <!-- Alert untuk user yang masa magang sudah habis -->
+        <?php if (!empty($expired_users)): ?>
+            <div class="alert alert-warning alert-dismissible fade show" role="alert" style="margin-bottom: 30px;">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Perhatian!</strong> Ada <?= count($expired_users) ?> user yang masa magangnya sudah habis:
+                <ul class="mb-0 mt-2">
+                    <?php foreach ($expired_users as $user): ?>
+                        <li>
+                            <strong><?= htmlspecialchars($user['nama']) ?></strong> (<?= htmlspecialchars($user['nik']) ?>) - 
+                            <small>Selesai: <?= date('d/m/Y', strtotime($user['end_date'])) ?></small>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+        
+        <!-- Alert untuk user yang akan habis masa magangnya -->
+        <?php if (!empty($expiring_soon)): ?>
+            <div class="alert alert-info alert-dismissible fade show" role="alert" style="margin-bottom: 30px;">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Info!</strong> Ada <?= count($expiring_soon) ?> User Magangnya akan habis:
+                <ul class="mb-0 mt-2">
+                    <?php foreach ($expiring_soon as $user): ?>
+                        <li>
+                            <strong><?= htmlspecialchars($user['nama']) ?></strong> (<?= htmlspecialchars($user['nik']) ?>) - 
+                            <small>Selesai: <?= date('d/m/Y', strtotime($user['end_date'])) ?></small>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
 
         <!-- Table Container -->
         <div class="table-container">
@@ -868,7 +974,7 @@ $totalUser = mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_karyawan WHER
                                 <td><?= !empty($row['jam_masuk']) ? htmlspecialchars($row['jam_masuk']) : '<span class="text-muted">-</span>' ?></td>
                                 <td><?= !empty($row['jam_pulang']) ? htmlspecialchars($row['jam_pulang']) : '<span class="text-muted">-</span>' ?></td>
                                 <td>
-                                    <span class="badge <?= $statusClass ?>">
+                                    <span class="badge <?= $statusClass ?>" <?= $row['status'] == 'Hadir' ? 'style="color: #000000 !important; background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important; text-shadow: none !important;"' : '' ?>>
                                         <i class="fas <?= $statusIcon ?>"></i>
                                         <?= htmlspecialchars($row['status']) ?>
                                     </span>
@@ -884,10 +990,6 @@ $totalUser = mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_karyawan WHER
                                         <i class="fas fa-inbox"></i>
                                         <h5>Belum Ada Data Absensi</h5>
                                         <p>Belum ada data absensi yang tercatat dalam sistem.</p>
-                                        <a href="tambahuser.php" class="btn-table mt-3">
-                                            <i class="fas fa-user-plus-circle me-1"></i>
-                                            Tambah User
-                                        </a>
                                     </div>
                                 </td>
                             </tr>
@@ -1000,8 +1102,43 @@ $totalUser = mysqli_query($conn, "SELECT COUNT(*) as total FROM tb_karyawan WHER
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Custom JavaScript -->
+    <!-- Custom JavaScript dengan Keamanan -->
     <script>
+    // Disable right click
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        return false;
+    });
+    
+    // Disable text selection
+    document.addEventListener('selectstart', function(e) {
+        e.preventDefault();
+        return false;
+    });
+    
+    // Disable drag
+    document.addEventListener('dragstart', function(e) {
+        e.preventDefault();
+        return false;
+    });
+    
+    // Console security
+    console.clear();
+    console.log('%c⚠️ WARNING!', 'color: red; font-size: 20px; font-weight: bold;');
+    console.log('%cThis is a private console! Unauthorized access is prohibited.', 'color: red; font-size: 14px;');
+    
+    // Check for dev tools
+    var devtools = {open: false, orientation: null};
+    setInterval(function() {
+        if(window.outerHeight - window.innerHeight > 200 || window.outerWidth - window.innerWidth > 200){
+            if(!devtools.open){
+                devtools.open = true;
+                console.clear();
+                console.log('%c🚫 Developer tools detected!', 'color: red; font-size: 16px; font-weight: bold;');
+            }
+        }
+    }, 500);
+    
     function showProfileModal() {
         var modal = new bootstrap.Modal(document.getElementById('profileModal'));
         modal.show();
