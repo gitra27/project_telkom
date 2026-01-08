@@ -8,7 +8,7 @@ if (!isset($_SESSION['nik'])) {
 }
 
 $nik  = $_SESSION['nik'];
-$nama = $_SESSION['nama'];
+$nama = $_SESSION['nama'] ?? 'User';
 
 // Prevent SQL injection with prepared statements
 $stmt = mysqli_prepare($conn, "SELECT * FROM tb_absensi WHERE nik = ? ORDER BY tanggal DESC, jam_masuk DESC");
@@ -22,49 +22,174 @@ $q = mysqli_stmt_get_result($stmt);
 <head>
     <title>Riwayat Absensi - <?= $nama ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #c3cfe2;
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        
+        .container {
+            max-width: 1200px;
+        }
+        
         .header-telkom {
-            background: #ff0033;
+            background: linear-gradient(135deg, #e31937, #003d7a);
             color: white;
-            padding: 15px;
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            border-left: 5px solid #e31937;
+        }
+        
+        .header-telkom h3 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .header-telkom small {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-bottom: 2px solid #e31937;
+            padding: 20px;
+            font-weight: 600;
+            color: #003d7a;
+        }
+        
+        .table {
+            margin: 0;
+            font-size: 14px;
+        }
+        
+        .table th {
+            background: linear-gradient(135deg, #003d7a, #e31937);
+            color: white;
+            font-weight: 600;
+            border: none;
+            padding: 15px 12px;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+        
+        .table td {
+            padding: 12px;
+            vertical-align: middle;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .bg-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .bg-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .bg-primary {
+            background: #cce5ff;
+            color: #004085;
+        }
+        
+        .btn {
             border-radius: 8px;
-            margin-bottom: 20px;
+            font-weight: 600;
+            font-size: 12px;
+            padding: 8px 16px;
+            transition: all 0.3s ease;
         }
-        .btn-telkom {
-            background: #ff0033;
-            color: white;
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
-        .btn-telkom:hover {
-            background: #cc002a;
-            color: white;
+        
+        .rounded {
+            border-radius: 12px;
+        }
+        
+        .shadow {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .text-muted {
+            color: #6c757d;
+            font-style: italic;
+        }
+        
+        .text-danger {
+            color: #dc3545;
+            font-weight: 600;
         }
     </style>
 </head>
 
-<body class="bg-light">
+<body>
 
 <div class="container mt-4">
 
     <div class="header-telkom">
-        <h3 class="mb-0">📄 Riwayat Absensi</h3>
-        <small>User: <?= $nama ?> (<?= $nik ?>)</small>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3 class="mb-0">📄 Riwayat Absensi</h3>
+                <small>User: <?= htmlspecialchars($nama, ENT_QUOTES, 'UTF-8') ?> (<?= htmlspecialchars($nik, ENT_QUOTES, 'UTF-8') ?>)</small>
+            </div>
+            <a href="dashboard.php" class="btn btn-light">
+                <i class="fas fa-arrow-left"></i> Kembali
+            </a>
+        </div>
     </div>
 
     <div class="card shadow-sm">
+        <div class="card-header">
+            <h5 class="mb-0">📊 Data Riwayat Absensi</h5>
+        </div>
         <div class="card-body table-responsive">
-
-            <table class="table table-bordered table-striped">
-                <thead class="table-dark">
+            <table class="table table-hover">
+                <thead>
                     <tr>
-                        <th>Tanggal</th>
-                        <th>Status</th>
-                        <th>Jam Masuk</th>
-                        <th>Jam Pulang</th>
-                        <th>Lokasi</th>
-                        <th>Foto</th>
-                        <th>File</th>
-                        <th>Catatan</th>
+                        <th><i class="fas fa-calendar"></i> Tanggal</th>
+                        <th><i class="fas fa-info-circle"></i> Status</th>
+                        <th><i class="fas fa-sign-in-alt"></i> Jam Masuk</th>
+                        <th><i class="fas fa-sign-out-alt"></i> Jam Pulang</th>
+                        <th><i class="fas fa-map-marker-alt"></i> Lokasi</th>
+                        <th><i class="fas fa-camera"></i> Foto</th>
+                        <th><i class="fas fa-file"></i> File</th>
+                        <th><i class="fas fa-sticky-note"></i> Catatan</th>
                     </tr>
                 </thead>
 

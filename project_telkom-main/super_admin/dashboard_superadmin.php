@@ -88,10 +88,13 @@ if ($check_expiring) {
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="X-Frame-Options" content="DENY">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com;">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta name="robots" content="noindex, nofollow">
     <title>Dashboard Super Admin - Sistem Presensi</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css?v=<?= time() ?>">
     
     <style>
         :root {
@@ -260,7 +263,7 @@ if ($check_expiring) {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
-            margin-bottom: 30px;
+            margin: 30px 0;
         }
 
         .stat-card {
@@ -367,10 +370,33 @@ if ($check_expiring) {
             letter-spacing: 0.5px;
         }
 
+        /* Alert sections styling */
+        .alert {
+            border-radius: 12px;
+            border: none;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            z-index: 1;
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+            border-left: 4px solid #17a2b8;
+            color: #0c5460;
+        }
+
         .table-container {
             background: var(--gradient-card);
             border-radius: 12px;
             padding: 25px;
+            margin-top: 30px;
             box-shadow: var(--shadow-md);
             border: 1px solid rgba(255,255,255,0.2);
             backdrop-filter: blur(10px);
@@ -866,7 +892,7 @@ if ($check_expiring) {
 
         <!-- Alert untuk user yang masa magang sudah habis -->
         <?php if (!empty($expired_users)): ?>
-            <div class="alert alert-warning alert-dismissible fade show" role="alert" style="margin-bottom: 30px;">
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
                 <i class="fas fa-exclamation-triangle me-2"></i>
                 <strong>Perhatian!</strong> Ada <?= count($expired_users) ?> user yang masa magangnya sudah habis:
                 <ul class="mb-0 mt-2">
@@ -883,7 +909,7 @@ if ($check_expiring) {
         
         <!-- Alert untuk user yang akan habis masa magangnya -->
         <?php if (!empty($expiring_soon)): ?>
-            <div class="alert alert-info alert-dismissible fade show" role="alert" style="margin-bottom: 30px;">
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
                 <i class="fas fa-info-circle me-2"></i>
                 <strong>Info!</strong> Ada <?= count($expiring_soon) ?> User Magangnya akan habis:
                 <ul class="mb-0 mt-2">
@@ -1058,38 +1084,18 @@ if ($check_expiring) {
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Notifikasi Sistem</label>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="notificationSwitch" checked>
-                            <label class="form-check-label" for="notificationSwitch">
-                                Aktifkan notifikasi sistem
-                            </label>
+                        <label class="form-label">Manajemen Pengguna</label>
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-outline-primary" onclick="window.location.href='data_user.php'">
+                                <i class="fas fa-users-cog me-2"></i>Kelola Role User
+                            </button>
+                            <button type="button" class="btn btn-outline-warning" onclick="window.location.href='data_user.php'">
+                                <i class="fas fa-key me-2"></i>Reset Password Per User
+                            </button>
+                            <button type="button" class="btn btn-outline-success" onclick="window.location.href='data_user.php'">
+                                <i class="fas fa-toggle-on me-2"></i>Aktif/Non Aktifkan Akun
+                            </button>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Mode Debug</label>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="debugSwitch">
-                            <label class="form-check-label" for="debugSwitch">
-                                Aktifkan mode debug
-                            </label>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Tampilan Dashboard</label>
-                        <select class="form-select">
-                            <option>Default (Grid)</option>
-                            <option>Compact</option>
-                            <option>Detailed</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Backup Otomatis</label>
-                        <select class="form-select">
-                            <option>Harian</option>
-                            <option>Mingguan</option>
-                            <option>Bulanan</option>
-                        </select>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -1124,7 +1130,7 @@ if ($check_expiring) {
     
     // Console security
     console.clear();
-    console.log('%c⚠️ WARNING!', 'color: red; font-size: 20px; font-weight: bold;');
+    console.log('%c WARNING!', 'color: red; font-size: 20px; font-weight: bold;');
     console.log('%cThis is a private console! Unauthorized access is prohibited.', 'color: red; font-size: 14px;');
     
     // Check for dev tools

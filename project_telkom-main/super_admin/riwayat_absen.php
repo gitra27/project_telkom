@@ -7,7 +7,7 @@ $hasNik = mysqli_num_rows($checkNik) > 0;
 
 // Pagination setup
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$perPage = 25;
+$perPage = 10;
 $offset = ($page - 1) * $perPage;
 
 // Filter setup
@@ -201,30 +201,6 @@ $totalPages = ceil($totalRecords / $perPage);
             margin-bottom: 30px;
             box-shadow: var(--shadow-md);
             border: 1px solid rgba(255,255,255,0.2);
-            backdrop-filter: blur(10px);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .page-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--gradient-telkom);
-            border-radius: 16px 16px 0 0;
-        }
-
-        .page-title {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--telkom-secondary);
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 15px;
             position: relative;
             z-index: 2;
         }
@@ -357,24 +333,46 @@ $totalPages = ceil($totalRecords / $perPage);
         }
 
         .pagination {
-            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            margin-top: 25px;
+            gap: 5px;
+        }
+
+        .pagination a, .pagination span {
+            padding: 8px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
             justify-content: center;
         }
 
-        .page-link {
-            color: var(--telkom-primary);
-            border-color: #dee2e6;
+        .pagination a {
+            background: white;
+            color: var(--telkom-secondary);
+            border: 1px solid #dee2e6;
         }
 
-        .page-link:hover {
+        .pagination a:hover {
+            background: var(--gradient-telkom);
             color: white;
-            background-color: var(--telkom-primary);
-            border-color: var(--telkom-primary);
+            transform: translateY(-1px);
         }
 
-        .page-item.active .page-link {
-            background-color: var(--telkom-primary);
-            border-color: var(--telkom-primary);
+        .pagination .active {
+            background: var(--gradient-telkom);
+            color: white;
+        }
+
+        .pagination .disabled {
+            color: var(--telkom-gray);
+            pointer-events: none;
+            background: white;
+            border: 1px solid #dee2e6;
         }
 
         @media (max-width: 768px) {
@@ -462,36 +460,6 @@ $totalPages = ceil($totalRecords / $perPage);
                     <input type="date" name="filter_tanggal" class="form-control" value="<?= htmlspecialchars($filterTanggal) ?>">
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Bulan</label>
-                    <select name="filter_bulan" class="form-select">
-                        <option value="">Semua</option>
-                        <option value="1" <?= $filterBulan == '1' ? 'selected' : '' ?>>Januari</option>
-                        <option value="2" <?= $filterBulan == '2' ? 'selected' : '' ?>>Februari</option>
-                        <option value="3" <?= $filterBulan == '3' ? 'selected' : '' ?>>Maret</option>
-                        <option value="4" <?= $filterBulan == '4' ? 'selected' : '' ?>>April</option>
-                        <option value="5" <?= $filterBulan == '5' ? 'selected' : '' ?>>Mei</option>
-                        <option value="6" <?= $filterBulan == '6' ? 'selected' : '' ?>>Juni</option>
-                        <option value="7" <?= $filterBulan == '7' ? 'selected' : '' ?>>Juli</option>
-                        <option value="8" <?= $filterBulan == '8' ? 'selected' : '' ?>>Agustus</option>
-                        <option value="9" <?= $filterBulan == '9' ? 'selected' : '' ?>>September</option>
-                        <option value="10" <?= $filterBulan == '10' ? 'selected' : '' ?>>Oktober</option>
-                        <option value="11" <?= $filterBulan == '11' ? 'selected' : '' ?>>November</option>
-                        <option value="12" <?= $filterBulan == '12' ? 'selected' : '' ?>>Desember</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Tahun</label>
-                    <select name="filter_tahun" class="form-select">
-                        <option value="">Semua</option>
-                        <?php
-                        $currentYear = date('Y');
-                        for($year = $currentYear; $year >= $currentYear - 5; $year--) {
-                            echo "<option value='$year' " . ($filterTahun == $year ? 'selected' : '') . ">$year</option>";
-                        }
-                        ?>
-                    </select>
-                </div>
-                <div class="col-md-2">
                     <label class="form-label">Status</label>
                     <select name="filter_status" class="form-select">
                         <option value="">Semua</option>
@@ -502,11 +470,7 @@ $totalPages = ceil($totalRecords / $perPage);
                         <option value="Selesai" <?= $filterStatus == 'Selesai' ? 'selected' : '' ?>>Selesai</option>
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label">Cari Nama</label>
-                    <input type="text" name="search_nama" class="form-control" placeholder="Nama karyawan" value="<?= htmlspecialchars($searchNama) ?>">
-                </div>
-                <div class="col-md-2">
+                <div class="col-md-8">
                     <label class="form-label">&nbsp;</label>
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">
@@ -543,13 +507,13 @@ $totalPages = ceil($totalRecords / $perPage);
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>No</th>
-                            <th>NIK</th>
-                            <?php if ($hasNik) echo "<th>Nama Lengkap</th>"; ?>
-                            <th>Tanggal</th>
-                            <th>Jam Masuk</th>
-                            <th>Jam Pulang</th>
-                            <th>Status</th>
+                            <th class="text-center">No</th>
+                            <th class="text-center">NIK</th>
+                            <?php if ($hasNik) echo "<th class=\"text-center\">Nama Lengkap</th>"; ?>
+                            <th class="text-center">Tanggal</th>
+                            <th class="text-center">Jam Masuk</th>
+                            <th class="text-center">Jam Pulang</th>
+                            <th class="text-center">Status</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -622,29 +586,37 @@ $totalPages = ceil($totalRecords / $perPage);
 
             <!-- Pagination -->
             <?php if ($totalPages > 1): ?>
-            <nav aria-label="Page navigation">
-                <ul class="pagination">
-                    <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
-                        <a class="page-link" href="?page=<?= $page - 1 ?><?= !empty($filterTanggal) ? '&filter_tanggal=' . $filterTanggal : '' ?><?= !empty($filterBulan) ? '&filter_bulan=' . $filterBulan : '' ?><?= !empty($filterTahun) ? '&filter_tahun=' . $filterTahun : '' ?><?= !empty($filterStatus) ? '&filter_status=' . $filterStatus : '' ?><?= !empty($searchNama) ? '&search_nama=' . $searchNama : '' ?>">
-                            <i class="fas fa-chevron-left"></i>
-                        </a>
-                    </li>
-                    
-                    <?php for($i = 1; $i <= $totalPages; $i++): ?>
-                    <li class="page-item <?= $i == $page ? 'active' : '' ?>">
-                        <a class="page-link" href="?page=<?= $i ?><?= !empty($filterTanggal) ? '&filter_tanggal=' . $filterTanggal : '' ?><?= !empty($filterBulan) ? '&filter_bulan=' . $filterBulan : '' ?><?= !empty($filterTahun) ? '&filter_tahun=' . $filterTahun : '' ?><?= !empty($filterStatus) ? '&filter_status=' . $filterStatus : '' ?><?= !empty($searchNama) ? '&search_nama=' . $searchNama : '' ?>">
-                            <?= $i ?>
-                        </a>
-                    </li>
-                    <?php endfor; ?>
-                    
-                    <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
-                        <a class="page-link" href="?page=<?= $page + 1 ?><?= !empty($filterTanggal) ? '&filter_tanggal=' . $filterTanggal : '' ?><?= !empty($filterBulan) ? '&filter_bulan=' . $filterBulan : '' ?><?= !empty($filterTahun) ? '&filter_tahun=' . $filterTahun : '' ?><?= !empty($filterStatus) ? '&filter_status=' . $filterStatus : '' ?><?= !empty($searchNama) ? '&search_nama=' . $searchNama : '' ?>">
-                            <i class="fas fa-chevron-right"></i>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
+            <div class="pagination">
+                <?php if ($page > 1): ?>
+                    <a href="?page=<?= $page - 1 ?><?= !empty($filterTanggal) ? '&filter_tanggal=' . $filterTanggal : '' ?><?= !empty($filterBulan) ? '&filter_bulan=' . $filterBulan : '' ?><?= !empty($filterTahun) ? '&filter_tahun=' . $filterTahun : '' ?><?= !empty($filterStatus) ? '&filter_status=' . $filterStatus : '' ?><?= !empty($searchNama) ? '&search_nama=' . $searchNama : '' ?>">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                <?php else: ?>
+                    <span class="disabled"><i class="fas fa-chevron-left"></i></span>
+                <?php endif; ?>
+
+                <?php 
+                // Show page ranges (1-10, 11-20, etc.)
+                $rangeSize = 10;
+                for ($start = 1; $start <= $totalPages; $start += $rangeSize):
+                    $end = min($start + $rangeSize - 1, $totalPages);
+                    $isInRange = ($page >= $start && $page <= $end);
+                ?>
+                    <?php if ($isInRange): ?>
+                        <span class="active"><?= $start ?>-<?= $end ?></span>
+                    <?php else: ?>
+                        <a href="?page=<?= $start ?><?= !empty($filterTanggal) ? '&filter_tanggal=' . $filterTanggal : '' ?><?= !empty($filterBulan) ? '&filter_bulan=' . $filterBulan : '' ?><?= !empty($filterTahun) ? '&filter_tahun=' . $filterTahun : '' ?><?= !empty($filterStatus) ? '&filter_status=' . $filterStatus : '' ?><?= !empty($searchNama) ? '&search_nama=' . $searchNama : '' ?>"><?= $start ?>-<?= $end ?></a>
+                    <?php endif; ?>
+                <?php endfor; ?>
+
+                <?php if ($page < $totalPages): ?>
+                    <a href="?page=<?= $page + 1 ?><?= !empty($filterTanggal) ? '&filter_tanggal=' . $filterTanggal : '' ?><?= !empty($filterBulan) ? '&filter_bulan=' . $filterBulan : '' ?><?= !empty($filterTahun) ? '&filter_tahun=' . $filterTahun : '' ?><?= !empty($filterStatus) ? '&filter_status=' . $filterStatus : '' ?><?= !empty($searchNama) ? '&search_nama=' . $searchNama : '' ?>">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                <?php else: ?>
+                    <span class="disabled"><i class="fas fa-chevron-right"></i></span>
+                <?php endif; ?>
+            </div>
             <?php endif; ?>
         </div>
     </div>

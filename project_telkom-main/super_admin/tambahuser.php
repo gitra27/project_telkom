@@ -55,7 +55,7 @@ if (isset($_POST['save'])) {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ");
             
-            mysqli_stmt_bind_param($insert_query, "ssssssss", 
+            mysqli_stmt_bind_param($insert_query, "sssssss", 
                 $nama, $nik, $password_hash, $asal, $lantai, $start, $end, $photo_path);
             
             if (mysqli_stmt_execute($insert_query)) {

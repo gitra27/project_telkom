@@ -9,43 +9,42 @@ include "../config.php";
 $error = false;
 
 if (isset($_POST['login'])) {
-
-    // ambil input
-    $nama_admin     = $_POST['nama_admin'];
-    $nik_admin      = $_POST['nik_admin'];
-    $lantai_admin   = $_POST['lantai'];
-    $password_admin = $_POST['password_admin'];
-
-    // ambil data admin berdasarkan nik
-    $query = mysqli_query($conn, "
-        SELECT * FROM tb_admin
-        WHERE nik_admin = '$nik_admin'
-    ");
-
-    if (mysqli_num_rows($query) === 1) {
-
-        $data = mysqli_fetch_assoc($query);
-
-        // validasi data
-        if (
-            $nama_admin === $data['nama_admin'] &&
-            $lantai_admin === $data['lantai'] &&
-            password_verify($password_admin, $data['password_admin'])
-        ) {
-
-            // simpan session admin (INI PENTING)
-            $_SESSION['admin'] = [
-                'nama_admin' => $data['nama_admin'],
-                'nik_admin'  => $data['nik_admin'],
-                'lantai'     => $data['lantai']
-            ];
-
-            header("location: admin_dashboard.php");
-            exit;
+    $nik_admin = mysqli_real_escape_string($conn, $_POST['nik_admin'] ?? '');
+    $password = $_POST['password'] ?? '';
+    
+    if (empty($nik_admin) || empty($password)) {
+        $error = 'NIK dan password wajib diisi!';
+    } else {
+        // Query untuk cek admin menggunakan nik_admin
+        $query = "SELECT * FROM tb_admin WHERE nik_admin='$nik_admin'";
+        $result = mysqli_query($conn, $query);
+        
+        if ($result && mysqli_num_rows($result) > 0) {
+            $admin = mysqli_fetch_assoc($result);
+            
+            // Verifikasi password
+            if (password_verify($password, $admin['password_admin'])) {
+                // Set session
+                $_SESSION['admin'] = [
+                    'id_admin' => $admin['id_admin'],
+                    'nama_admin' => $admin['nama_admin'],
+                    'nik_admin' => $admin['nik_admin'],
+                    'lantai' => $admin['lantai']
+                ];
+                
+                $_SESSION['role'] = 'admin';
+                $_SESSION['nik'] = $admin['nik_admin'];
+                $_SESSION['admin_role'] = $admin['level']; // Simpan admin_role ke session
+                
+                header('Location: admin_dashboard_new.php');
+                exit;
+            } else {
+                $error = 'Password salah!';
+            }
+        } else {
+            $error = 'NIK tidak ditemukan!';
         }
     }
-
-    $error = true;
 }
 ?>
 <!DOCTYPE html>
@@ -370,13 +369,6 @@ if (isset($_POST['login'])) {
 
                 <form method="post">
                     <div class="form-group">
-                        <label for="nama_admin" class="form-label">Nama Admin</label>
-                        <div class="input-wrapper">
-                            <input type="text" name="nama_admin" class="form-control-custom" placeholder="Masukkan Nama Admin" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
                         <label for="nik_admin" class="form-label">NIK Admin</label>
                         <div class="input-wrapper">
                             <input type="text" name="nik_admin" class="form-control-custom" placeholder="Masukkan NIK Admin" required>
@@ -384,23 +376,9 @@ if (isset($_POST['login'])) {
                     </div>
 
                     <div class="form-group">
-                        <label for="lantai" class="form-label">Lantai</label>
+                        <label for="password" class="form-label">Password</label>
                         <div class="input-wrapper">
-                            <select name="lantai" class="form-control-custom" required>
-                                <option value="">- Pilih Lantai -</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="5">5</option>
-                                <option value="6">6</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="password_admin" class="form-label">Password</label>
-                        <div class="input-wrapper">
-                            <input type="password" name="password_admin" class="form-control-custom" placeholder="Masukkan Password" required>
+                            <input type="password" name="password" class="form-control-custom" placeholder="Masukkan password" required>
                         </div>
                     </div>
 

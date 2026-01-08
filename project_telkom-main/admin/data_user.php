@@ -36,8 +36,35 @@ $totalResult = mysqli_query($conn, $countQuery);
 $total = mysqli_fetch_assoc($totalResult)['total'];
 $pages = ceil($total / $perPage);
 
+// Update user
+if(isset($_POST['update_user'])){
+    $id = $_POST['id'];
+    $nama = $_POST['nama'];
+    $password = $_POST['password'];
+    
+    if(!empty($password)){
+        // Hash password baru
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        mysqli_query($conn, "UPDATE tb_karyawan SET nama='$nama', password='$hashed_password' WHERE id='$id'");
+    } else {
+        // Update nama saja
+        mysqli_query($conn, "UPDATE tb_karyawan SET nama='$nama' WHERE id='$id'");
+    }
+    
+    header("Location: data_user.php");
+    exit;
+}
+
 // Get data
 $data = mysqli_query($conn, "SELECT * FROM tb_karyawan $whereClause ORDER BY id DESC LIMIT $start, $perPage");
+
+// Get user data for editing
+$edit_user = null;
+if(isset($_GET['edit_id'])){
+    $edit_id = $_GET['edit_id'];
+    $edit_data = mysqli_query($conn, "SELECT * FROM tb_karyawan WHERE id='$edit_id'");
+    $edit_user = mysqli_fetch_assoc($edit_data);
+}
 ?>
 
 <!DOCTYPE html>
@@ -436,6 +463,16 @@ $data = mysqli_query($conn, "SELECT * FROM tb_karyawan $whereClause ORDER BY id 
             transition: all 0.3s ease;
         }
 
+        .btn-view {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .btn-view:hover {
+            background: #bee5eb;
+            transform: translateY(-1px);
+        }
+
         .btn-edit {
             background: #cfe2ff;
             color: #084298;
@@ -581,45 +618,25 @@ $data = mysqli_query($conn, "SELECT * FROM tb_karyawan $whereClause ORDER BY id 
     <div class="sidebar">
         <div class="sidebar-header">
             <h4>
-                <i class="fas fa-shield-alt"></i>
-                SUPERADMIN
+                <i class="fas fa-user-shield"></i>
+                ADMIN
             </h4>
             <div class="subtitle">Sistem Presensi Magang</div>
         </div>
         
-        <a href="dashboard_superadmin.php">
+        <a href="admin_dashboard_new.php">
             <i class="fas fa-tachometer-alt"></i>
             Dashboard
         </a>
-        <a href="#" onclick="showProfileModal()">
+        <a href="admin_profile.php">
             <i class="fas fa-user"></i>
             Profile
-        </a>
-        <a href="tambah_admin.php">
-            <i class="fas fa-user-plus"></i>
-            Tambah Admin 
-        </a>
-        <a href="tambahuser.php">
-            <i class="fas fa-user-plus"></i>
-            Tambah User
         </a>
         <a href="data_user.php" class="active">
             <i class="fas fa-users"></i>
             Data User
         </a>
-        <a href="data_admin.php">
-            <i class="fas fa-user-shield"></i>
-            Data Admin
-        </a>
-        <a href="riwayat_absen.php">
-            <i class="fas fa-history"></i>
-            Riwayat Absen
-        </a>
-        <a href="#" onclick="showSettingsModal()">
-            <i class="fas fa-cog"></i>
-            Settings
-        </a>
-        <a href="logout_superadmin.php">
+        <a href="../logout.php">
             <i class="fas fa-sign-out-alt"></i>
             Logout
         </a>
@@ -634,7 +651,7 @@ $data = mysqli_query($conn, "SELECT * FROM tb_karyawan $whereClause ORDER BY id 
                 Data User
             </h1>
             <div class="page-subtitle">
-                Kelola data seluruh user yang terdaftar dalam sistem
+                Kelola data user magang yang terdaftar dalam sistem
             </div>
         </div>
 
@@ -643,7 +660,7 @@ $data = mysqli_query($conn, "SELECT * FROM tb_karyawan $whereClause ORDER BY id 
             <div class="table-header">
                 <h2 class="table-title">
                     <i class="fas fa-list"></i>
-                    Daftar User
+                    Daftar User Magang
                 </h2>
                 <div class="table-actions">
                     <div class="search-box">
@@ -652,10 +669,6 @@ $data = mysqli_query($conn, "SELECT * FROM tb_karyawan $whereClause ORDER BY id 
                             <input type="text" name="search" placeholder="Cari user..." value="<?= htmlspecialchars($search) ?>">
                         </form>
                     </div>
-                    <a href="tambahuser.php" class="btn-telkom">
-                        <i class="fas fa-plus"></i>
-                        Tambah User
-                    </a>
                 </div>
             </div>
             
@@ -680,7 +693,7 @@ $data = mysqli_query($conn, "SELECT * FROM tb_karyawan $whereClause ORDER BY id 
                                 if (!empty($d['photo_path'])) {
                                     // Use the path as stored in database (relative to project root)
                                     if (file_exists($d['photo_path']) && is_file($d['photo_path'])) {
-                                        // Use relative path from super_admin with cache busting
+                                        // Use relative path from admin with cache busting
                                         $photoPath = '../' . $d['photo_path'] . '?t=' . time();
                                     }
                                 }
@@ -711,17 +724,13 @@ $data = mysqli_query($conn, "SELECT * FROM tb_karyawan $whereClause ORDER BY id 
                                 </td>
                                 <td>
                                     <div class="action-buttons">
-                                        <a href="edit_user.php?id=<?= $d['id'] ?>" class="btn-action btn-edit">
+                                        <a href="data_user.php?edit_id=<?= $d['id'] ?>" class="btn-action btn-edit">
                                             <i class="fas fa-edit"></i>
                                             Edit
                                         </a>
-                                        <a href="riwayat_absen.php?search_nama=<?= urlencode($d['nama']) ?>" class="btn-action btn-report">
+                                        <a href="../riwayat_absen.php?search_nama=<?= urlencode($d['nama']) ?>" class="btn-action btn-report">
                                             <i class="fas fa-file-alt"></i>
                                             Report
-                                        </a>
-                                        <a href="data_user.php?hapus=<?= $d['id'] ?>" class="btn-action btn-delete" onclick="return confirm('Apakah Anda yakin ingin menghapus user ini?')">
-                                            <i class="fas fa-trash"></i>
-                                            Hapus
                                         </a>
                                     </div>
                                 </td>
@@ -735,11 +744,7 @@ $data = mysqli_query($conn, "SELECT * FROM tb_karyawan $whereClause ORDER BY id 
                                     <div class="empty-state">
                                         <i class="fas fa-users-slash"></i>
                                         <h5>Belum Ada Data User</h5>
-                                        <p>Belum ada user yang terdaftar dalam sistem.</p>
-                                        <a href="tambahuser.php" class="btn-telkom">
-                                            <i class="fas fa-plus me-2"></i>
-                                            Tambah User
-                                        </a>
+                                        <p>Belum ada user magang yang terdaftar dalam sistem.</p>
                                     </div>
                                 </td>
                             </tr>
@@ -782,8 +787,89 @@ $data = mysqli_query($conn, "SELECT * FROM tb_karyawan $whereClause ORDER BY id 
             </div>
             <?php endif; ?>
         </div>
+
+        <!-- Edit User Form -->
+        <?php if($edit_user): ?>
+        <div class="table-container" style="margin-top: 30px;">
+            <div class="table-header">
+                <h2 class="table-title">
+                    <i class="fas fa-user-edit"></i>
+                    Edit User
+                </h2>
+            </div>
+            
+            <form method="POST" style="padding: 20px;">
+                <input type="hidden" name="id" value="<?= $edit_user['id'] ?>">
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Nama User</label>
+                            <input type="text" name="nama" class="form-control" value="<?= htmlspecialchars($edit_user['nama']) ?>" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">NIK User</label>
+                            <input type="text" class="form-control" value="<?= htmlspecialchars($edit_user['nik']) ?>" readonly>
+                            <small class="text-muted">NIK tidak dapat diubah</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Lantai</label>
+                            <select class="form-control" disabled>
+                                <option>Lantai <?= htmlspecialchars($edit_user['lantai']) ?></option>
+                            </select>
+                            <small class="text-muted">Lantai tidak dapat diubah</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Password Baru (opsional)</label>
+                            <input type="password" name="password" class="form-control" placeholder="Kosongkan jika tidak diganti">
+                            <small class="text-muted">Isi untuk mereset password</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-actions" style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
+                    <button type="submit" name="update_user" class="btn-telkom">
+                        <i class="fas fa-save"></i>
+                        Update User
+                    </button>
+                    <a href="data_user.php" class="btn-secondary" style="background: #6c757d; color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-times"></i>
+                        Batal
+                    </a>
+                </div>
+            </form>
+        </div>
+        <?php endif; ?>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function viewUser(userId) {
+            // Fungsi untuk melihat detail user
+            window.open('view_user.php?id=' + userId, '_blank', 'width=800,height=600');
+        }
+
+        function showSettingsModal() {
+            alert('Fitur settings akan segera tersedia');
+        }
+
+        // Konfirmasi sebelum hapus
+        document.querySelectorAll('.btn-delete').forEach(button => {
+            button.addEventListener('click', function(e) {
+                if (!confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
 </body>
 </html>

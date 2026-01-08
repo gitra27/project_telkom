@@ -14,6 +14,14 @@ $today = date('Y-m-d');
 // fetch user
 $uq = mysqli_query($conn, "SELECT * FROM tb_karyawan WHERE nik='".esc($nik)."' LIMIT 1");
 $user = $uq && mysqli_num_rows($uq) ? mysqli_fetch_assoc($uq) : null;
+
+// Jika user tidak ditemukan, redirect ke login
+if (!$user) {
+    session_destroy();
+    header("Location: login.php");
+    exit;
+}
+
 $lantai = $user['lantai'] ?? '';
 $nama = $user['nama'] ?? '';
 
@@ -116,12 +124,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             else {
                 if (!empty($row['jam_pulang'])) $err = "Absen pulang sudah tercatat.";
                 else {
-                    // Validasi jam kerja realistis Indonesia untuk pulang (16:30 - 18:00)
+                    // Validasi jam kerja realistis Indonesia untuk pulang (bisa setelah 16:30)
                     if ($current_hour < 16 || ($current_hour == 16 && $current_minute < 30)) {
                         $err = "Absen pulang hanya bisa dilakukan mulai pukul 16:30 WIB.";
-                    } elseif ($current_hour >= 18) {
-                        $err = "Absen pulang hanya bisa dilakukan hingga pukul 18:00 WIB.";
                     } else {
+                        // Tidak ada batas atas waktu, bisa absen kapan saja setelah 16:30
                         // location required
                         if ($lat === '' || $lon === '') { 
                             $err = "Lokasi wajib untuk absen pulang."; 
@@ -136,10 +143,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             mysqli_query($conn, $sql);
                             $msg = "Absen pulang tercatat. Terima kasih.";
                         }
-                        $new_status = $has_selesai ? 'Selesai' : 'Hadir';
-                        $sql = "UPDATE tb_absensi SET jam_pulang='$time_now', status='$new_status', maps_url='$maps_url', catatan=COALESCE('$keterangan', catatan) WHERE id_absen='".$row['id_absen']."'";
-                        mysqli_query($conn, $sql);
-                        $msg = "Absen pulang tercatat. Terima kasih.";
                     }
                 }
             }
@@ -211,9 +214,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             // Refresh user data
                             $uq = mysqli_query($conn, "SELECT * FROM tb_karyawan WHERE nik='".esc($nik)."' LIMIT 1");
                             $user = $uq && mysqli_num_rows($uq) ? mysqli_fetch_assoc($uq) : null;
-                            
-                            // Add JavaScript to update avatar without page reload
-                            echo "<script>updateProfileAvatar('".esc($photo_path)."'); document.getElementById('photoPreview').innerHTML = '';</script>";
                         } else {
                             $err = "Gagal menyimpan foto ke database.";
                             // Remove uploaded file if database update failed
@@ -238,19 +238,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if (!isset($absenHariIni)) {
     $cekAbsen = mysqli_query($conn, "SELECT * FROM tb_absensi WHERE nik='".esc($nik)."' AND tanggal='$today' LIMIT 1");
     $absenHariIni = $cekAbsen && mysqli_num_rows($cekAbsen) ? mysqli_fetch_assoc($cekAbsen) : null;
-}
-
-// --- Small stats for user's floor (useful for admin per-lantai) ---
-$total_floor = 0; $floor_hadir = 0; $floor_sakit = 0; $floor_izin = 0;
-if ($lantai) {
-    $r1 = mysqli_query($conn, "SELECT COUNT(*) as c FROM tb_karyawan WHERE lantai='".esc($lantai)."' AND account_active=1");
-    $total_floor = $r1 ? intval(mysqli_fetch_assoc($r1)['c']) : 0;
-    $r2 = mysqli_query($conn, "SELECT COUNT(*) as c FROM tb_absensi a JOIN tb_karyawan k ON a.nik=k.nik WHERE a.tanggal='$today' AND k.lantai='".esc($lantai)."' AND a.status IN ('Hadir','Telat','Selesai')");
-    $floor_hadir = $r2 ? intval(mysqli_fetch_assoc($r2)['c']) : 0;
-    $r3 = mysqli_query($conn, "SELECT COUNT(*) as c FROM tb_absensi a JOIN tb_karyawan k ON a.nik=k.nik WHERE a.tanggal='$today' AND k.lantai='".esc($lantai)."' AND a.status='Sakit'");
-    $floor_sakit = $r3 ? intval(mysqli_fetch_assoc($r3)['c']) : 0;
-    $r4 = mysqli_query($conn, "SELECT COUNT(*) as c FROM tb_absensi a JOIN tb_karyawan k ON a.nik=k.nik WHERE a.tanggal='$today' AND k.lantai='".esc($lantai)."' AND a.status='Izin'");
-    $floor_izin = $r4 ? intval(mysqli_fetch_assoc($r4)['c']) : 0;
 }
 
 // --- HISTORY (last 30 days) ---
@@ -404,14 +391,6 @@ body::before{
   border-left:3px solid var(--telkom-warning);
 }
 
-.upload-preview{
-  max-width:120px;
-  max-height:120px;
-  object-fit:cover;
-  border-radius:12px;
-  box-shadow:var(--shadow-md);
-  border:2px solid var(--telkom-primary);
-}
 
 .table-scroll{
   max-height:420px;
@@ -566,26 +545,6 @@ hr{
   box-shadow:var(--shadow-sm);
 }
 
-/* Custom styles for 7 hari terakhir */
-.list-group-item {
-  border-left: none !important;
-  border-right: none !important;
-  transition: all 0.3s ease;
-}
-
-.list-group-item:hover {
-  background-color: rgba(227, 25, 55, 0.05);
-  transform: translateX(5px);
-}
-
-.list-group-item .border-start {
-  transition: all 0.3s ease;
-}
-
-.list-group-item:hover .border-start {
-  border-color: var(--telkom-primary) !important;
-}
-
 </style>
 </head>
 
@@ -639,7 +598,7 @@ hr{
 
         <div class="small-muted">Masa PKL</div>
         <div><strong><?= esc($user['start_date'] ?? '-') ?> — <?= esc($user['end_date'] ?? '-') ?></strong></div>
-        <div class="mt-1"><?= ($user['account_active'] ? "<span class='badge bg-success'>Aktif</span>" : "<span class='badge bg-secondary'>Nonaktif</span>") ?></div>
+        <div class="mt-1"><?= (isset($user['account_active']) && $user['account_active'] ? "<span class='badge bg-success'>Aktif</span>" : "<span class='badge bg-secondary'>Nonaktif</span>") ?></div>
 
         <hr>
 
@@ -651,59 +610,8 @@ hr{
           <button type="submit" class="btn btn-telkom btn-sm w-100">
             <i class="fas fa-upload me-2"></i>Upload Foto
           </button>
-          <div id="photoPreview" class="mt-2 text-center"></div>
         </form>
 
-      </div>
-
-      <!-- summary lantai -->
-      <div class="card p-3 mb-3">
-        <h6 class="mb-2">Ringkasan Lantai <?= esc($lantai ?: '-') ?></h6>
-        <div class="d-flex justify-content-between">
-          <div class="small-muted">Total Peserta</div><div><strong><?= $total_floor ?></strong></div>
-        </div>
-        <div class="d-flex justify-content-between">
-          <div class="small-muted">Hadir Hari Ini</div><div><strong><?= $floor_hadir ?></strong></div>
-        </div>
-        <div class="d-flex justify-content-between">
-          <div class="small-muted">Sakit</div><div><strong><?= $floor_sakit ?></strong></div>
-        </div>
-        <div class="d-flex justify-content-between">
-          <div class="small-muted">Izin</div><div><strong><?= $floor_izin ?></strong></div>
-        </div>
-      </div>
-
-      <!-- 7 hari terakhir -->
-      <div class="card p-3">
-        <h6 class="mb-3">7 Hari Terakhir</h6>
-        <div class="list-group list-group-flush">
-          <?php
-          $sevenQ = mysqli_query($conn, "SELECT tanggal,status,jam_masuk,jam_pulang FROM tb_absensi WHERE nik='".esc($nik)."' ORDER BY tanggal DESC LIMIT 7");
-          if ($sevenQ && mysqli_num_rows($sevenQ) > 0):
-            while($s = mysqli_fetch_assoc($sevenQ)):
-              $status_color = ($s['status'] == 'Hadir') ? 'text-success' : 
-                            ($s['status'] == 'Telat' ? 'text-warning' : 
-                            ($s['status'] == 'Izin' ? 'text-primary' : 
-                            ($s['status'] == 'Sakit' ? 'text-warning' : 'text-secondary')));
-          ?>
-            <div class="list-group-item d-flex justify-content-between align-items-center px-0 border-start border-0 ps-3">
-              <div class="d-flex align-items-center">
-                <div class="border-start border-3 border-warning me-3" style="height: 40px;"></div>
-                <div>
-                  <div class="fw-bold"><?= date("d M", strtotime($s['tanggal'])); ?></div>
-                  <small class="<?= $status_color ?>"><?= $s['status'] ?: 'Belum Absen' ?></small>
-                </div>
-              </div>
-              <div class="text-end">
-                <small class="text-muted"><?= ($s['jam_masuk'] ?: '-') ?></small>
-              </div>
-            </div>
-          <?php endwhile; else: ?>
-            <div class="list-group-item text-center text-muted py-3">
-              <i class="fas fa-calendar-times me-2"></i>Belum ada riwayat absensi
-            </div>
-          <?php endif; ?>
-        </div>
       </div>
 
     </div>
@@ -750,17 +658,16 @@ hr{
               <input type="file" name="foto" accept="image/*" required class="form-control">
             </div>
 
-            <div class="mb-2">
+            <div class="mb-2" id="fileUploadDiv" style="display:none;">
               <label class="form-label">Upload Surat / File (jika Izin/Sakit wajib)</label>
               <input type="file" name="file_upload" class="form-control">
             </div>
 
             <div class="d-flex gap-2">
-              <button type="button" class="btn btn-telkom" onclick="submitAbsen('masuk')">Kirim Absen Masuk</button>
-              <button type="button" class="btn btn-outline-primary" onclick="submitAbsen('izin')">Kirim Izin</button>
-              <button type="button" class="btn btn-outline-warning" onclick="submitAbsen('sakit')">Kirim Sakit</button>
+              <button type="button" class="btn btn-telkom" id="btnMasuk" onclick="submitAbsen('masuk')">Kirim Absen Hadir</button>
+              <button type="button" class="btn btn-outline-primary" id="btnIzin" onclick="submitAbsen('izin')" style="display:none;">Kirim Absen Izin</button>
+              <button type="button" class="btn btn-outline-warning" id="btnSakit" onclick="submitAbsen('sakit')" style="display:none;">Kirim Absen Sakit</button>
             </div>
-            <div class="small-muted mt-2">Catatan: Absen masuk hanya bisa dilakukan jam 08.00-08.15</div>
           </form>
 
         <?php else: ?>
@@ -826,9 +733,12 @@ if ($status == 'Belum Absen' && !empty($absenHariIni['jam_pulang'])) {
                 <textarea name="keterangan_pulang" class="form-control" rows="2" placeholder="Contoh: Lembur mengerjakan data pegawai, rapat tambahan, dll."></textarea>
               </div>
               
-              <button type="button" class="btn btn-telkom" onclick="submitPulang()">Kirim Absen Pulang</button>
+              <button type="button" id="btnPulang" class="btn btn-telkom" onclick="submitPulang()">Kirim Absen Pulang</button>
+              <button type="button" class="btn btn-outline-secondary btn-sm ms-2" onclick="testGPS()">
+                <i class="fas fa-map-marker-alt"></i> Test GPS
+              </button>
             </form>
-            <div class="small-muted mt-2">Absen pulang hanya bisa dilakukan mulai pukul 16.30. Jika lewat dari jam 16.30, wajib mengisi catatan/alasan.</div>
+            <div class="small-muted mt-2">Absen pulang bisa dilakukan mulai pukul 16.30 WIB. Tidak ada batas waktu maksimal.</div>
           <?php elseif ($status === 'Izin' || $status === 'Sakit'): ?>
             <div class="alert alert-info">Status <?= htmlspecialchars($status) ?> - Tidak perlu absen pulang.</div>
           <?php else: ?>
@@ -951,10 +861,75 @@ function autoHideErrorMessage() {
   }
 }
 
+// Function to toggle buttons and file upload based on status selection
+function toggleButtons(status) {
+  const btnMasuk = document.getElementById('btnMasuk');
+  const btnIzin = document.getElementById('btnIzin');
+  const btnSakit = document.getElementById('btnSakit');
+  const fileUploadDiv = document.getElementById('fileUploadDiv');
+  
+  // Hide all buttons first
+  btnMasuk.style.display = 'none';
+  btnIzin.style.display = 'none';
+  btnSakit.style.display = 'none';
+  
+  // Show appropriate button and update text based on status
+  if (status === 'Hadir') {
+    btnMasuk.style.display = 'inline-block';
+    btnMasuk.textContent = 'Kirim Absen Hadir';
+    fileUploadDiv.style.display = 'none';
+  } else if (status === 'Izin') {
+    btnIzin.style.display = 'inline-block';
+    btnIzin.textContent = 'Kirim Absen Izin';
+    fileUploadDiv.style.display = 'block';
+  } else if (status === 'Sakit') {
+    btnSakit.style.display = 'inline-block';
+    btnSakit.textContent = 'Kirim Absen Sakit';
+    fileUploadDiv.style.display = 'block';
+  }
+}
+
 // run auto-hide when page loads
 document.addEventListener('DOMContentLoaded', function() {
   autoHideSuccessMessage();
   autoHideErrorMessage();
+  
+  // Add event listener for status select change
+  const statusSelect = document.getElementById('statusSelect');
+  if (statusSelect) {
+    statusSelect.addEventListener('change', function() {
+      toggleButtons(this.value);
+    });
+    // Initialize button visibility based on default selection
+    toggleButtons(statusSelect.value);
+  }
+  
+  // Coba dapatkan lokasi GPS untuk backup absen pulang
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      function(position) {
+        // Simpan lokasi sebagai backup
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        
+        // Update field latitude dan longitude yang tersembunyi
+        const latEl = document.getElementById('latitude');
+        const lonEl = document.getElementById('longitude');
+        if (latEl && !latEl.value) latEl.value = lat;
+        if (lonEl && !lonEl.value) lonEl.value = lon;
+        
+        console.log('Lokasi GPS berhasil didapatkan sebagai backup');
+      },
+      function(error) {
+        console.log('Tidak bisa mendapatkan lokasi GPS otomatis:', error.message);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 300000 // 5 menit
+      }
+    );
+  }
 });
 
 // geolocation helpers
@@ -969,56 +944,139 @@ function setLatLonInputs(lat, lon){
   if(lonP) lonP.value = lon;
 }
 
-function requestLocation(callback){
-  if (!navigator.geolocation) {
-    alert('Geolocation tidak didukung browser ini.');
-    callback(false);
+function useManualLocation() {
+  const lat = document.getElementById('manualLat').value;
+  const lon = document.getElementById('manualLon').value;
+  
+  if (!lat || !lon) {
+    alert('❌ Mohon isi latitude dan longitude terlebih dahulu!\n\nContoh:\nLatitude: -6.208763\nLongitude: 106.845599');
     return;
   }
-  navigator.geolocation.getCurrentPosition(
-    function(pos){
-      setLatLonInputs(pos.coords.latitude, pos.coords.longitude);
-      callback(true);
-    },
-    function(err){
-      alert('Gagal mendapatkan lokasi. Pastikan GPS aktif dan izinkan akses lokasi.');
-      callback(false);
-    },
-    {timeout:15000, enableHighAccuracy:true}
-  );
+  
+  // Validasi format koordinat
+  const latNum = parseFloat(lat);
+  const lonNum = parseFloat(lon);
+  
+  if (isNaN(latNum) || isNaN(lonNum)) {
+    alert('❌ Format koordinat tidak valid!\n\nPastikan menggunakan angka dengan titik desimal.\nContoh: -6.208763');
+    return;
+  }
+  
+  if (latNum < -90 || latNum > 90) {
+    alert('❌ Latitude tidak valid!\n\nLatitude harus antara -90 dan 90 derajat.');
+    return;
+  }
+  
+  if (lonNum < -180 || lonNum > 180) {
+    alert('❌ Longitude tidak valid!\n\nLongitude harus antara -180 dan 180 derajat.');
+    return;
+  }
+  
+  // Set koordinat manual
+  document.getElementById('latitude').value = latNum.toFixed(6);
+  document.getElementById('longitude').value = lonNum.toFixed(6);
+  
+  // Update status
+  const statusEl = document.getElementById('gpsStatus');
+  statusEl.innerHTML = '<span style="color:orange;">✅ Lokasi Manual Digunakan!</span><br><small>Lat: ' + latNum.toFixed(6) + ', Lon: ' + lonNum.toFixed(6) + '</small>';
+  
+  alert('✅ Lokasi manual berhasil disimpan!\n\nKoordinat:\nLatitude: ' + latNum.toFixed(6) + '\nLongitude: ' + lonNum.toFixed(6) + '\n\nSekarang bisa melakukan absen!');
 }
 
 function submitAbsen(action){
-  requestLocation(function(ok){
-    if (!ok) return;
-    // set action field
-    document.getElementById('actionField').value = action;
-    // if action requires file (izin/sakit) we keep same form; server checks file presence
-    // set statusSelect if needed
-    if (action==='izin' || action==='sakit') document.getElementById('statusSelect').value = (action==='izin'?'Izin':'Sakit');
-    // finally submit
-    document.getElementById('formAbsen').submit();
-  });
+  // set action field
+  document.getElementById('actionField').value = action;
+  // if action requires file (izin/sakit) we keep same form; server checks file presence
+  // set statusSelect if needed
+  // finally submit
+  document.getElementById('formAbsen').submit();
 }
 
 function submitPulang(){
-  requestLocation(function(ok){
-    if (!ok) return;
+  console.log('submitPulang dipanggil');
+  
+  // Cek apakah sudah ada lokasi dari form absen masuk
+  const lat = document.getElementById('latitude').value || document.getElementById('latitude_pulang').value;
+  const lon = document.getElementById('longitude').value || document.getElementById('longitude_pulang').value;
+  
+  console.log('Lokasi tersedia:', { lat, lon });
+  
+  if (!lat || !lon) {
+    // Jika tidak ada lokasi, tampilkan dialog untuk input manual GPS
+    const manualLat = prompt('Masukkan latitude (contoh: -6.200000):');
+    const manualLon = prompt('Masukkan longitude (contoh: 106.816666):');
+    
+    if (manualLat && manualLon) {
+      // Validasi koordinat
+      const latNum = parseFloat(manualLat);
+      const lonNum = parseFloat(manualLon);
+      
+      if (!isNaN(latNum) && !isNaN(lonNum)) {
+        // Simpan ke form
+        document.getElementById('latitude_pulang').value = latNum;
+        document.getElementById('longitude_pulang').value = lonNum;
+        
+        console.log('Lokasi manual disimpan:', { lat: latNum, lon: lonNum });
+        
+        // Submit form
+        document.getElementById('formPulang').submit();
+      } else {
+        alert('Format koordinat tidak valid!');
+      }
+    } else {
+      // Jika tidak ada lokasi, coba dapatkan lokasi GPS otomatis
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            
+            // Simpan ke form
+            document.getElementById('latitude_pulang').value = lat;
+            document.getElementById('longitude_pulang').value = lon;
+            
+            console.log('Lokasi GPS berhasil didapatkan:', { lat, lon });
+            
+            // Submit form
+            document.getElementById('formPulang').submit();
+          },
+          function(error) {
+            console.error('GPS ERROR:', error);
+            alert('❌ GPS Gagal: ' + error.message + '\n\nKode: ' + error.code);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
+      } else {
+        alert('Browser tidak mendukung GPS');
+      }
+    }
+  } else {
+    // Jika ada lokasi, gunakan lokasi yang ada
+    document.getElementById('latitude_pulang').value = lat;
+    document.getElementById('longitude_pulang').value = lon;
+    
+    console.log('Menggunakan lokasi yang tersedia:', { lat, lon });
+    
+    // Submit form
     document.getElementById('formPulang').submit();
-  });
+  }
 }
 
-// preview profile photo
+// Function to preview profile photo before upload
 function previewProfilePhoto(input) {
-  const preview = document.getElementById('photoPreview');
   if (input.files && input.files[0]) {
     const reader = new FileReader();
     reader.onload = function(e) {
-      preview.innerHTML = '<img src="' + e.target.result + '" class="upload-preview" alt="Preview">';
+      const avatar = document.getElementById('profileAvatar');
+      if (avatar) {
+        avatar.src = e.target.result;
+      }
     };
     reader.readAsDataURL(input.files[0]);
-  } else {
-    preview.innerHTML = '';
   }
 }
 
